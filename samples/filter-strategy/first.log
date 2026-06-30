@@ -1,0 +1,2 @@
+warning: selected 5/8 filters with strategy=first: 1:PK@31.5Hz/+1dB, 2:PK@63Hz/-6dB, 3:PK@125Hz/+2dB, 4:PK@500Hz/-1.5dB, 5:PK@1000Hz/+3dB; ignored: 6:PK@2000Hz/-7.5dB, 7:LS@100Hz/+2.5dB, 8:HS@9000Hz/-4dB
+preamp_db=-6.0 filters=8 strategy=first max_sections=5 written=samples/filter-strategy/first.bin bytes=320

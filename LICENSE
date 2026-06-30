@@ -1,0 +1,21 @@
+This repository uses a split license.
+
+Source code:
+
+  Files under tools/, scripts/, experiments/, and kernel_modules/ are licensed
+  under the GNU General Public License, version 3 or later.
+
+  SPDX-License-Identifier: GPL-3.0-or-later
+
+Documentation:
+
+  README.md and files under docs/ are licensed under Creative Commons
+  Attribution-NonCommercial-NoDerivatives 4.0 International.
+
+  SPDX-License-Identifier: CC-BY-NC-ND-4.0
+
+Not included:
+
+  Sony firmware, Sony binaries, stock tuning tables, device dumps, AutoEq
+  datasets, and third-party repositories are not licensed by this project and
+  are intentionally not redistributed here.
