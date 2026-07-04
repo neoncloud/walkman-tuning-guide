@@ -2,6 +2,15 @@
 
 > English title: **Walkman Ultimate Tuning Guide**
 
+> [!WARNING]
+> **先备份，再动手。/ Back up first.**
+>
+> 按本项目文档一步一步操作，正常情况下不会把播放器刷砖；但固件修改、ADB/root、`/proc` 写入和内核模块都属于会碰系统状态的操作。为了防止断电、误操作、脚本路径选错或设备差异导致的极端情况，**强烈建议在开始 ADB 解锁、写 tone table 或安装模块之前，先按 [BACKUP.md](BACKUP.md) 备份系统分区/整机镜像**。
+>
+> `unknown321` 的 [Walkman Backup/Restore Tool](https://github.com/unknown321/wbrt) 可以在 Windows 上为 MT8590 系列 Walkman 做备份和还原；其说明中明确支持 NW-A30/40/50、ZX300、WM1A、WM1Z、DMP-Z1，并提示 bootloop 恢复的前提是你已经提前做过备份。Wampy 的 [BACKUP.md](https://github.com/unknown321/wampy/blob/master/BACKUP.md) 也建议在安装出问题这种极小概率事件前准备备份。
+>
+> Following this guide carefully should not brick the player, but firmware patching, ADB/root access, `/proc` writes, and kernel modules still touch system state. Before ADB unlock, tone-table writes, or module installation, make a system/full-device backup using [BACKUP.md](BACKUP.md).
+
 本项目面向 Sony Walkman A / ZX / WM 系列播放器，整理了一套从 AutoEq / PEQ 参数生成 CXD3778GF 自定义调音表，并把调音表部署到播放器上的完整工具链。
 
 This project packages a reproducible tuning workflow for Sony Walkman A / ZX / WM players: convert AutoEq / PEQ filters into custom CXD3778GF tone tables, then deploy those tables to the player.
@@ -17,6 +26,14 @@ This project packages a reproducible tuning workflow for Sony Walkman A / ZX / W
 Goal: convert headphone AutoEq / PEQ filters into a Walkman-compatible tone table and deploy it.
 
 ### 1. 准备环境 / Prepare
+
+先完成系统备份：
+
+Make a system/full-device backup first:
+
+- [BACKUP.md](BACKUP.md)
+- [unknown321/wbrt](https://github.com/unknown321/wbrt)
+- [unknown321/wampy BACKUP.md](https://github.com/unknown321/wampy/blob/master/BACKUP.md)
 
 ```bash
 cd /home/neoncloud/walkman-tuning-guide
