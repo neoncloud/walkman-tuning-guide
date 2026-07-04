@@ -53,11 +53,15 @@ def ideal_sections(filters: list[peq.Filter], fs: float, preamp_db: float) -> li
 
 
 def check_empty_matches_sg(tmp: Path) -> None:
+    stock_sg = DUMP / "proc_tct_sg.bin"
+    if not stock_sg.exists():
+        note("private A50 stock tct_sg dump is missing; skipping stock empty-table comparison")
+        return
     empty_txt = tmp / "empty.txt"
     empty_bin = tmp / "empty.bin"
     empty_txt.write_text("")
     run([str(TOOLS / "autoeq_to_cxd3778gf_peq.py"), "--body-only", str(empty_txt), str(empty_bin)])
-    if empty_bin.read_bytes() != (DUMP / "proc_tct_sg.bin").read_bytes():
+    if empty_bin.read_bytes() != stock_sg.read_bytes():
         fail("empty AutoEq body no longer matches stock tct_sg")
     note("empty AutoEq output matches stock tct_sg")
 
@@ -131,7 +135,8 @@ def check_plotter(tmp: Path) -> None:
 def check_full_table_builder(tmp: Path) -> None:
     out = tmp / "tc_1291.sample-sg.tbl"
     sample = ROOT / "samples" / "sample-autoeq.txt"
-    base = DUMP / "tc_1291.tbl"
+    base = tmp / "identity.tbl"
+    tct.make_identity_table(base)
     run([
         str(TOOLS / "autoeq_to_cxd3778gf_table.py"),
         str(sample),

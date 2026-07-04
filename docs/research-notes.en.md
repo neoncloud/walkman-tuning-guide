@@ -6,7 +6,7 @@
 docs/cxd3778gf-methods.zh.md
 ```
 
-Workspace: `/home/neoncloud/zx300-peq-research` in WSL. The Windows repo is treated as archive/source material only.
+Workspace: `/home/neoncloud/walkman-tuning-guide` in WSL. The Windows repo is treated as archive/source material only.
 
 ## What Wampy confirms
 
@@ -44,12 +44,12 @@ Device connected by ADB through `E:\Downloads\platform-tools\adb.exe`:
 
 Dump location:
 
-- WSL: `/home/neoncloud/zx300-peq-research/device-dumps/a50-10459245524948`
+- WSL: `/home/neoncloud/walkman-tuning-guide/device-dumps/a50-10459245524948`
 - Windows archive copy: `E:\Downloads\zx300-a50-probe`
 
 ## Kernel prototype
 
-Modified WSL source tree: `/home/neoncloud/zx300-peq-research/kernel/soc/codecs/cxd3778gf`.
+Modified WSL source tree: `/home/neoncloud/walkman-tuning-guide/kernel/soc/codecs/cxd3778gf`.
 
 Prototype behavior:
 
@@ -64,7 +64,7 @@ This is intentionally raw-table based. It avoids baking an unverified coefficien
 
 ## Helper tool
 
-`/home/neoncloud/zx300-peq-research/tools/cxd3778gf_tct_tool.py`
+`/home/neoncloud/walkman-tuning-guide/tools/cxd3778gf_tct_tool.py`
 
 Supported operations:
 
@@ -89,10 +89,10 @@ Evidence: the stock general headphone table decodes to five identity sections in
 
 Frequency-response sanity check:
 
-- Plot tool: `/home/neoncloud/zx300-peq-research/tools/plot_cxd3778gf_tct_response.py`
+- Plot tool: `/home/neoncloud/walkman-tuning-guide/tools/plot_cxd3778gf_tct_response.py`
 - Stock plots:
-  - `/home/neoncloud/zx300-peq-research/plots/cxd3778gf_tct_response_half0_44100hz.svg`
-  - `/home/neoncloud/zx300-peq-research/plots/cxd3778gf_tct_response_half1_48000hz.svg`
+  - `/home/neoncloud/walkman-tuning-guide/plots/cxd3778gf_tct_response_half0_44100hz.svg`
+  - `/home/neoncloud/walkman-tuning-guide/plots/cxd3778gf_tct_response_half1_48000hz.svg`
 - `sg` plots as exactly `0.00 dB` across the band.
 - NW500/NW750 plots show plausible headphone compensation: strong low-frequency attenuation, a small lift around 500 Hz, and cuts around 1-2 kHz.
 - NC31/SNC31 plots are more moderate broad corrections.
@@ -103,7 +103,7 @@ This is strong evidence for the IIR interpretation: random bit-field or endian m
 
 New tool:
 
-`/home/neoncloud/zx300-peq-research/tools/autoeq_to_cxd3778gf_peq.py`
+`/home/neoncloud/walkman-tuning-guide/tools/autoeq_to_cxd3778gf_peq.py`
 
 It parses AutoEq-style lines such as:
 
@@ -126,7 +126,7 @@ It emits a 328-byte blob: 320-byte RAM body plus the 8-byte Sony checksum.
 
 Full table builder:
 
-`/home/neoncloud/zx300-peq-research/tools/autoeq_to_cxd3778gf_table.py`
+`/home/neoncloud/walkman-tuning-guide/tools/autoeq_to_cxd3778gf_table.py`
 
 This wraps the PEQ generator and emits a complete 2888-byte `tc_*.tbl` style table by replacing one of the nine 320-byte chunks in a base table and recomputing the full-table checksum. Example:
 
@@ -136,11 +136,11 @@ tools/autoeq_to_cxd3778gf_table.py samples/sample-autoeq.txt samples/full-table/
   --target sg --filter-strategy best
 ```
 
-Validation example output: `/home/neoncloud/zx300-peq-research/samples/full-table/tc_1291.sample-sg.tbl`. It is useful for archive/boot-time table experiments. The helper does not write `/system` or modify firmware files by itself.
+Validation example output: `/home/neoncloud/walkman-tuning-guide/samples/full-table/tc_1291.sample-sg.tbl`. It is useful for archive/boot-time table experiments. The helper does not write `/system` or modify firmware files by itself.
 
 New ADB helper:
 
-`/home/neoncloud/zx300-peq-research/tools/apply_cxd3778gf_peq_adb.sh`
+`/home/neoncloud/walkman-tuning-guide/tools/apply_cxd3778gf_peq_adb.sh`
 
 Usage:
 
@@ -164,21 +164,21 @@ Validation performed:
 Additional custom-PEQ plotting validation:
 
 - `plot_cxd3778gf_tct_response.py` now accepts direct custom chunks with `--chunk-file name=/path/to/blob`; the blob may be either 320-byte raw tone RAM or 328-byte tone RAM plus checksum.
-- Sample AutoEq input: `/home/neoncloud/zx300-peq-research/samples/sample-autoeq.txt`
-- Generated sample blob: `/home/neoncloud/zx300-peq-research/samples/sample-autoeq.cxd3778gf-peq.bin`
+- Sample AutoEq input: `/home/neoncloud/walkman-tuning-guide/samples/sample-autoeq.txt`
+- Generated sample blob: `/home/neoncloud/walkman-tuning-guide/samples/sample-autoeq.cxd3778gf-peq.bin`
 - Sample plots:
-  - `/home/neoncloud/zx300-peq-research/plots/sample-peq/cxd3778gf_tct_response_half0_44100hz.svg`
-  - `/home/neoncloud/zx300-peq-research/plots/sample-peq/cxd3778gf_tct_response_half1_48000hz.svg`
+  - `/home/neoncloud/walkman-tuning-guide/plots/sample-peq/cxd3778gf_tct_response_half0_44100hz.svg`
+  - `/home/neoncloud/walkman-tuning-guide/plots/sample-peq/cxd3778gf_tct_response_half1_48000hz.svg`
 - The sample response matches the designed RBJ filters after Q37 encoding with max coefficient error about `3.5e-12` and max response error below `1e-7 dB`.
 
 The sample uses `Preamp -4 dB`, `LS +3 dB @ 105 Hz`, `PK -2.5 dB @ 950 Hz`, `PK +4 dB @ 3100 Hz`, and `HS -1.5 dB @ 9000 Hz`; the plotted curve follows that expectation.
 
 Filter-selection validation for profiles with more than five filters:
 
-- Input: `/home/neoncloud/zx300-peq-research/samples/filter-strategy/autoeq-8filters.txt`
-- Outputs: `/home/neoncloud/zx300-peq-research/samples/filter-strategy/{first,largest,wide,greedy,best}.bin`
-- Plots: `/home/neoncloud/zx300-peq-research/plots/filter-strategy/cxd3778gf_tct_response_half0_44100hz.svg` and `half1_48000hz.svg`
-- Error table: `/home/neoncloud/zx300-peq-research/plots/filter-strategy/error-summary.csv`
+- Input: `/home/neoncloud/walkman-tuning-guide/samples/filter-strategy/autoeq-8filters.txt`
+- Outputs: `/home/neoncloud/walkman-tuning-guide/samples/filter-strategy/{first,largest,wide,greedy,best}.bin`
+- Plots: `/home/neoncloud/walkman-tuning-guide/plots/filter-strategy/cxd3778gf_tct_response_half0_44100hz.svg` and `half1_48000hz.svg`
+- Error table: `/home/neoncloud/walkman-tuning-guide/plots/filter-strategy/error-summary.csv`
 - In the 8-filter sample, RMS error against the full response is `first=2.1714 dB`, `largest=0.8867 dB`, `wide=0.8867 dB`, `greedy=0.9782 dB`, `best=0.7684 dB`.
 - Empty-input compatibility was rechecked after this change: `--body-only` output still matches stock `tct_sg`.
 
@@ -186,13 +186,13 @@ Filter-selection validation for profiles with more than five filters:
 
 Two small pure-Python tools are available for the remaining hardware-output check:
 
-- `/home/neoncloud/zx300-peq-research/tools/make_peq_measurement_wav.py` creates a stepped-sine WAV plus a CSV manifest.
-- `/home/neoncloud/zx300-peq-research/tools/analyze_peq_measurement.py` measures each stepped-sine segment in a captured WAV and can compare PEQ-vs-flat delta in dB.
+- `/home/neoncloud/walkman-tuning-guide/tools/make_peq_measurement_wav.py` creates a stepped-sine WAV plus a CSV manifest.
+- `/home/neoncloud/walkman-tuning-guide/tools/analyze_peq_measurement.py` measures each stepped-sine segment in a captured WAV and can compare PEQ-vs-flat delta in dB.
 
 Generated stimulus:
 
-- `/home/neoncloud/zx300-peq-research/samples/peq-measurement-44100.wav`
-- `/home/neoncloud/zx300-peq-research/samples/peq-measurement-44100.csv`
+- `/home/neoncloud/walkman-tuning-guide/samples/peq-measurement-44100.wav`
+- `/home/neoncloud/walkman-tuning-guide/samples/peq-measurement-44100.csv`
 
 Recommended measurement flow:
 

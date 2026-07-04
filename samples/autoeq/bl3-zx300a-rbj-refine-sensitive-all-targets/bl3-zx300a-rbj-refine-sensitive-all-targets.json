@@ -1,0 +1,158 @@
+{
+  "method": "RBJ 5-biquad least_squares fit to minimum-phase WAV magnitude",
+  "optimization": {
+    "refine_from_rbj": true,
+    "sensitive_band_hz": [
+      1000.0,
+      6000.0
+    ],
+    "sensitive_weight": 2.0,
+    "base_weight_rms_db": 0.27853814795010423,
+    "weighted_rms_db": 0.4416323096435312
+  },
+  "wav": "tools/test/bl3.wav",
+  "base_table": "backups/tc_127x.tbl",
+  "output_table": "samples/autoeq/bl3-zx300a-rbj-refine-sensitive-all-targets/full-table/tc_127x.bl3-zx300a-rbj-refine-sensitive-all-targets.tbl",
+  "chunk": "samples/autoeq/bl3-zx300a-rbj-refine-sensitive-all-targets/chunks/bl3-zx300a-rbj-refine-sensitive-all-targets.bin",
+  "targets": [
+    "nh",
+    "ng",
+    "nnw500",
+    "nnw750",
+    "nnc31",
+    "sg",
+    "snw500",
+    "snw750",
+    "snc31"
+  ],
+  "topology": "LSC,PK,PK,PK,PK",
+  "weighted_rms_db": 0.4416323096435312,
+  "base_weight_rms_db": 0.27853814795010423,
+  "unweighted_rms_db": 0.2835282998914821,
+  "max_abs_error_db": 1.2752987493641714,
+  "sensitive_band_rms_db": 0.3887141076952854,
+  "preamp_db": -3.645524148093612,
+  "filters": [
+    {
+      "kind": "LSC",
+      "freq": 959.9571699498299,
+      "gain": 3.220092858446251,
+      "q": 0.9999999999999999,
+      "number": 1
+    },
+    {
+      "kind": "PK",
+      "freq": 287.37450507863485,
+      "gain": -3.3174921522420004,
+      "q": 0.3933544881498165,
+      "number": 2
+    },
+    {
+      "kind": "PK",
+      "freq": 3090.5790015761854,
+      "gain": -1.862780362640376,
+      "q": 4.769946110582019,
+      "number": 3
+    },
+    {
+      "kind": "PK",
+      "freq": 10556.429756205003,
+      "gain": 7.43958408474389,
+      "q": 0.7760072328881527,
+      "number": 4
+    },
+    {
+      "kind": "PK",
+      "freq": 19999.99999999996,
+      "gain": -17.81077155275152,
+      "q": 0.42713250742534126,
+      "number": 5
+    }
+  ],
+  "chunk_md5": "0411686e412d9800569e8d5dec9a9a43",
+  "body_md5": "4f707f6902c7e0cfec92ca182a70db14",
+  "key_points": [
+    {
+      "frequency_hz": 20.000000000000004,
+      "target_db": -0.40253307904249,
+      "fitted_db": -0.5293083431157473,
+      "error_db": -0.12677526407325723
+    },
+    {
+      "frequency_hz": 31.37596850513094,
+      "target_db": -0.9180121160522353,
+      "fitted_db": -0.6726763516880956,
+      "error_db": 0.24533576436413973
+    },
+    {
+      "frequency_hz": 62.772661578896404,
+      "target_db": -1.113381802942919,
+      "fitted_db": -1.2745414885626545,
+      "error_db": -0.16115968561973548
+    },
+    {
+      "frequency_hz": 100.2675431920378,
+      "target_db": -2.0550960535875844,
+      "fitted_db": -2.1003609609032035,
+      "error_db": -0.04526490731561905
+    },
+    {
+      "frequency_hz": 200.6013154657486,
+      "target_db": -3.5393264797130155,
+      "fitted_db": -3.487702516724983,
+      "error_db": 0.05162396298803262
+    },
+    {
+      "frequency_hz": 498.17210875392993,
+      "target_db": -3.540823990369428,
+      "fitted_db": -3.3814302272538974,
+      "error_db": 0.15939376311553044
+    },
+    {
+      "frequency_hz": 996.6732719578606,
+      "target_db": -2.8057945733445546,
+      "fitted_db": -3.4294553187004526,
+      "error_db": -0.623660745355898
+    },
+    {
+      "frequency_hz": 1994.0048701639623,
+      "target_db": -3.4755295914910387,
+      "fitted_db": -3.854478530646778,
+      "error_db": -0.37894893915573924
+    },
+    {
+      "frequency_hz": 3989.3268276644512,
+      "target_db": -3.1384812913610944,
+      "fitted_db": -3.434746694961234,
+      "error_db": -0.29626540360013953
+    },
+    {
+      "frequency_hz": 7981.288699969265,
+      "target_db": -1.5068128878572367,
+      "fitted_db": -1.239915720804507,
+      "error_db": 0.2668971670527296
+    },
+    {
+      "frequency_hz": 9996.698472214941,
+      "target_db": -0.6492486935230402,
+      "fitted_db": -0.9142793766561059,
+      "error_db": -0.26503068313306577
+    },
+    {
+      "frequency_hz": 15967.849229728521,
+      "target_db": -11.704795858504223,
+      "fitted_db": -11.698389156720836,
+      "error_db": 0.006406701783387092
+    },
+    {
+      "frequency_hz": 20000.000000000004,
+      "target_db": -21.476811569201416,
+      "fitted_db": -20.78414600256582,
+      "error_db": 0.692665566635597
+    }
+  ],
+  "reproduce_hint": {
+    "script": "experiments/reproduce/10_blessing3_rbj_wav_fit.sh",
+    "cwd": "/home/neoncloud/walkman-tuning-guide"
+  }
+}

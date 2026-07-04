@@ -1,21 +1,50 @@
-This repository uses a split license.
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
 
-Source code:
+This repository is licensed under the Creative Commons
+Attribution-NonCommercial-ShareAlike 4.0 International License.
 
-  Files under tools/, scripts/, experiments/, and kernel_modules/ are licensed
-  under the GNU General Public License, version 3 or later.
+Full legal code:
 
-  SPDX-License-Identifier: GPL-3.0-or-later
+  https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 
-Documentation:
+Human-readable summary:
 
-  README.md and files under docs/ are licensed under Creative Commons
-  Attribution-NonCommercial-NoDerivatives 4.0 International.
+  https://creativecommons.org/licenses/by-nc-sa/4.0/
 
-  SPDX-License-Identifier: CC-BY-NC-ND-4.0
+You are free to:
 
-Not included:
+  Share: copy and redistribute the material in any medium or format.
+  Adapt: remix, transform, and build upon the material.
 
-  Sony firmware, Sony binaries, stock tuning tables, device dumps, AutoEq
-  datasets, and third-party repositories are not licensed by this project and
-  are intentionally not redistributed here.
+Under the following terms:
+
+  Attribution: You must give appropriate credit, provide a link to the
+  license, and indicate if changes were made.
+
+  NonCommercial: You may not use the material for commercial purposes.
+
+  ShareAlike: If you remix, transform, or build upon the material, you must
+  distribute your contributions under the same license as the original.
+
+For this repository, prohibited commercial use includes, but is not limited to:
+
+  - paid installation services;
+  - paid firmware flashing services;
+  - paid tuning or EQ services;
+  - selling tuning tables, firmware packages, or tuning packs;
+  - bundling this work with commercial repair, modification, or resale
+    services;
+  - integrating this work into paid applications, commercial firmware, or
+    commercial products.
+
+No Sony firmware, Sony binaries, stock tone tables, device dumps, AutoEq
+datasets, third-party repositories, or trademarks are licensed by this project.
+You must obtain third-party materials legally from their original sources.
+
+This project is not affiliated with or endorsed by Sony.
+
+THE MATERIAL IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND. THE AUTHORS ARE
+NOT RESPONSIBLE FOR DEVICE DAMAGE, DATA LOSS, HEARING DAMAGE, FAILED FIRMWARE
+UPDATES, SECURITY ISSUES, OR ANY OTHER CONSEQUENCE ARISING FROM USE OF THIS
+REPOSITORY.

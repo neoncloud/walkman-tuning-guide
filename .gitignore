@@ -19,3 +19,7 @@ device-dumps/
 *.tbl
 !samples/filter-strategy/*.bin
 !samples/sample-autoeq.txt
+!scripts/*.cmd
+!tools/test/bl3.wav
+!samples/autoeq/**/*.bin
+!samples/autoeq/**/*.tbl

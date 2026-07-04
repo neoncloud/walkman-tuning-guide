@@ -21,7 +21,12 @@ POINTS="${POINTS:-768}"
 
 need_file "$BL3_TARGET_WAV"
 need_file "$BL3_TARGET_PEQ"
-need_file "$ZX300A_BASE_TABLE"
+
+if [[ ! -f "$ZX300A_BASE_TABLE" ]]; then
+  mkdir -p "$(dirname "$ZX300A_BASE_TABLE")"
+  "$PYTHON" tools/cxd3778gf_tct_tool.py make-identity "$ZX300A_BASE_TABLE"
+  echo "created identity base table: $ZX300A_BASE_TABLE"
+fi
 
 mkdir -p "$OUT_DIR/chunks" "$OUT_DIR/full-table" "$OUT_DIR/plots"
 

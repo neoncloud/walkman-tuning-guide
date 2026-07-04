@@ -1,87 +1,158 @@
 # Walkman终级调音指南
 
-> English title: Walkman Ultimate Tuning Guide
+> English title: **Walkman Ultimate Tuning Guide**
 
-本项目把 Sony Walkman A / ZX / WM 系列播放器中的 CXD3778GF tone table 调音路径整理成一个可复现的开源工程：从 AutoEq/PEQ 参数生成 CXD3778GF 可读取的五级二阶 IIR 系数表，再通过 ADB 或 ZX300 系列内核模块写入播放器。
+本项目面向 Sony Walkman A / ZX / WM 系列播放器，整理了一套从 AutoEq / PEQ 参数生成 CXD3778GF 自定义调音表，并把调音表部署到播放器上的完整工具链。
 
-This repository documents and packages an experimental Sony Walkman tuning path: convert AutoEq/PEQ filters into the CXD3778GF five-section biquad tone table, then deploy that table to supported Walkman players through ADB or a ZX300-family helper kernel module.
+This project packages a reproducible tuning workflow for Sony Walkman A / ZX / WM players: convert AutoEq / PEQ filters into custom CXD3778GF tone tables, then deploy those tables to the player.
 
-## Too Long; Don't Read / 快速安装
+> 风险提示 / Risk notice  
+> 本项目会修改播放器音频调音路径，部分机型还需要加载自定义内核模块。请先备份原始固件、原始调音表和重要数据。所有内容按原样提供，作者不承诺适配任何设备，也不承担刷机失败、设备损坏、听力损伤或数据丢失责任。  
+> This project changes the audio tuning path of the player, and some models require a custom kernel module. Back up firmware, stock tone tables, and important data first. Everything is provided as-is, without warranty.
 
-> 风险提示 / Risk: 这些步骤会写入播放器的音频调音表。请先备份原表；中高端机型还可能需要加载内核模块。你需要能承担恢复固件、重刷或手动清理模块的风险。
+## Too Long; Don't Read / 太长不看
 
-1. 解锁 ADB 调试 / Enable ADB debugging  
-   参见 [ADB 解锁指南](docs/adb-unlock.zh-en.md)。低端 A 系列通常只需要 ADB root shell；ZX / WM 系列还需要确认内核行为。
+目标：把耳机的 AutoEq / PEQ 参数转换成 Walkman 可读取的 tone table，然后部署到播放器。
 
-2. 备份 stock table / Back up the stock tone table
+Goal: convert headphone AutoEq / PEQ filters into a Walkman-compatible tone table and deploy it.
 
-   ```bash
-   export ADB=/path/to/adb
-   "$ADB" pull /system/usr/share/audio_dac/tc_1291.tbl backups/tc_1291.stock.tbl
-   "$ADB" shell 'cat /proc/icx_audio_cxd3778gf_data/tct' > backups/proc_tct.stock.bin
-   ```
+### 1. 准备环境 / Prepare
 
-3. 从 AutoEq 文本生成 PEQ blob / Generate a PEQ blob
+```bash
+cd /home/neoncloud/walkman-tuning-guide
+python3 -m pip install -r requirements.txt
 
-   ```bash
-   tools/autoeq_to_cxd3778gf_peq.py samples/sample-autoeq.txt out/sample.peq.tbl \
-     --filter-strategy best --max-sections 5
-   ```
+# Windows/WSL 用户可直接使用 E 盘 platform-tools
+export ADB=/mnt/e/Downloads/platform-tools/adb.exe
+```
 
-4. A 系列直接写入目标 chunk / A-series direct proc write
+播放器需要先开启 ADB。详细步骤见 [docs/adb-unlock.zh-en.md](docs/adb-unlock.zh-en.md)。
 
-   ```bash
-   tools/apply_cxd3778gf_peq_adb.sh --input samples/sample-autoeq.txt --target sg \
-     --filter-strategy best
-   ```
+ADB must be enabled first. See [docs/adb-unlock.zh-en.md](docs/adb-unlock.zh-en.md).
 
-5. ZX / WM 系列加载 helper module 后写入完整表 / ZX/WM helper-module path
+### 2. 备份原表 / Back Up Stock Tables
 
-   ```bash
-   bash scripts/build_zx300_tone_apply.sh
-   bash experiments/reproduce/97_install_cxd3778gf_tone_apply_module.sh
-   bash experiments/reproduce/94_apply_bl3_rbj_refine_sensitive_zx300a_and_tone_ram.sh
-   ```
+```bash
+mkdir -p backups
+"$ADB" shell 'cat /proc/icx_audio_cxd3778gf_data/tct' > backups/proc_tct.stock.bin
+"$ADB" pull /system/usr/share/audio_dac/tc_1291.tbl backups/tc_1291.stock.tbl
+```
 
-6. 恢复 / Restore
+### 3. 生成调音表 / Generate a Tone Table
 
-   ```bash
-   tools/apply_cxd3778gf_peq_adb.sh --restore --target sg
-   bash experiments/reproduce/93_restore_zx300a_stock_tct_and_tone_ram.sh
-   ```
+从 AutoEq 文本生成五级 IIR 调音表：
+
+Generate a five-section IIR tone table from an AutoEq text profile:
+
+```bash
+mkdir -p out backups
+python3 tools/cxd3778gf_tct_tool.py make-identity backups/identity.tbl
+python3 tools/autoeq_to_cxd3778gf_table.py samples/sample-autoeq.txt out/custom.tbl \
+  --base-table backups/identity.tbl \
+  --target sg \
+  --filter-strategy best
+```
+
+如果目标来自 minimum-phase WAV 或需要拟合响应曲线，可使用：
+
+For a minimum-phase WAV target or response fitting:
+
+```bash
+bash experiments/reproduce/15_bl3_rbj_refine_sensitive_zx300a_all_targets.sh
+```
+
+### 4. 部署到 A 系列 / Deploy to A-Series
+
+A50 实测可以直接写入 tone table proc 节点：
+
+On tested A50 devices, the stock proc node can apply the table directly:
+
+```bash
+bash scripts/install_tone_table.sh \
+  --device-class a \
+  --input samples/sample-autoeq.txt \
+  --target sg
+```
+
+### 5. 部署到 ZX / WM 系列 / Deploy to ZX / WM
+
+ZX300A 实测 stock kernel 会更新驱动内存里的表，但不会在 `TYPE_Z` 路径上自动把表刷入 CXD3778GF tone RAM。因此需要安装 helper kernel module：
+
+On tested ZX300A devices, the stock kernel updates the in-memory table but does not reload CXD3778GF tone RAM on the `TYPE_Z` path. Install the helper kernel module:
+
+```bash
+bash scripts/build_zx300_tone_apply.sh
+bash experiments/reproduce/97_install_cxd3778gf_tone_apply_module.sh
+bash scripts/install_tone_table.sh \
+  --device-class zx \
+  --table samples/autoeq/bl3-zx300a-rbj-refine-sensitive-all-targets/full-table/tc_127x.bl3-zx300a-rbj-refine-sensitive-all-targets.tbl
+```
+
+开机自动应用：
+
+Autoload at boot:
+
+```bash
+bash experiments/reproduce/97_install_cxd3778gf_tone_apply_autoload.sh
+bash experiments/reproduce/98_set_cxd3778gf_tone_autoload_table.sh \
+  samples/autoeq/bl3-zx300a-rbj-refine-sensitive-all-targets/full-table/tc_127x.bl3-zx300a-rbj-refine-sensitive-all-targets.tbl
+```
+
+### 6. 还原 / Restore
+
+```bash
+bash scripts/restore_stock_tone_table.sh --device-class zx
+bash experiments/reproduce/99_uninstall_cxd3778gf_tone_apply_autoload.sh
+bash experiments/reproduce/99_uninstall_cxd3778gf_tone_apply_module.sh
+```
+
+更多部署细节见 [docs/deployment.zh-en.md](docs/deployment.zh-en.md)。
+
+For details, see [docs/deployment.zh-en.md](docs/deployment.zh-en.md).
 
 ## 简介 / Introduction
 
-Sony Walkman A 系列、ZX 系列和 WM 系列中的多款 Linux/Android 机型共享相近的音频 codec 路径。本项目在 NW-A50 与 NW-ZX300A 的固件/内核材料中确认了 `cxd3778gf` 驱动，即 Sony CXD3778GF audio codec/DAC 路径。该驱动暴露 `/proc/icx_audio_cxd3778gf_data/{tct,tct_*}`，用于加载 tone-control table。
+Sony Walkman A 系列、ZX 系列以及 WM 系列的多款 Linux/Android 播放器使用相近的 `cxd3778gf` 音频 codec 路径。我们在 A50 与 ZX300A 的固件、内核源码和设备实验中确认了 Sony **CXD3778GF** codec/DAC 相关驱动与 tone-control table 路径。
 
-Many A-series, ZX-series, and WM-series Walkman players share a similar Sony audio codec path. In the tested A50 and ZX300A materials, the relevant kernel driver is `cxd3778gf`, which controls a Sony CXD3778GF audio codec/DAC path and exposes `/proc/icx_audio_cxd3778gf_data/{tct,tct_*}` for tone-control tables.
+Many Sony Walkman A-series, ZX-series, and WM-series Linux/Android players share a similar `cxd3778gf` audio codec path. In A50 and ZX300A firmware, kernel source, and device experiments, we confirmed the Sony **CXD3778GF** codec/DAC driver and its tone-control table path.
 
-这个调音表的核心是一组级联的二阶 IIR 滤波器。每个输出/耳机 case 有一个 320-byte chunk；每个 chunk 分为两个 160-byte half，推定分别服务 44.1 kHz family 和 48 kHz family；每个 half 前 25 个 40-bit Q37 word 表示五个 biquad section：`b0, b1, b2, -a1, -a2`。
+原生固件会根据播放器型号、输出路径和耳机型号选择不同的 tone table。例如针对普通耳机、NW500、NW750、NC31 等耳机 case，固件里存在不同的调音表。这说明 Walkman 并不是只依赖前端 10-band EQ，它的 codec 路径中还存在更底层的专用调音能力。
 
-The table is essentially a cascade of second-order IIR filters. Each output/headphone case has one 320-byte chunk; each chunk has two 160-byte halves, currently interpreted as the 44.1 kHz and 48 kHz families. The first 25 signed 40-bit Q37 words in each half encode five biquad sections as `b0, b1, b2, -a1, -a2`.
+The stock firmware selects different tone tables according to player model, output path, and headphone case. Tables exist for general headphones and Sony-specific cases such as NW500, NW750, and NC31. This shows that Walkman tuning is not limited to the user-facing 10-band EQ; the codec path contains a lower-level tuning mechanism.
 
-本项目提供：
+本项目当前的核心模型是：一个 tone table chunk 代表一组五级串联的二阶 IIR 滤波器，也就是 5 个 biquad。调音表的本质是记录这些滤波器的定点参数。通过把 AutoEq / PEQ 参数转换成这 5 个 biquad，并写回 CXD3778GF tone table，我们就能让 Walkman 对特定耳机执行更细致的校正。
 
-- AutoEq parametric EQ 到 CXD3778GF tone table 的转换工具。
-- A 系列 stock kernel proc 节点直接写入流程。
-- ZX300A `TYPE_Z` 路径的 `cxd3778gf_tone_apply` 内核模块，用于强制把已写入驱动内存的 table 刷入 CXD3778GF tone RAM。
-- 可复现实验脚本、样例、研究记录和测量辅助工具。
+The current model is that each tone-table chunk represents five cascaded second-order IIR sections, or five biquads. The table stores fixed-point parameters for those filters. By converting AutoEq / PEQ filters into these five biquads and writing them back as a CXD3778GF tone table, Walkman players can perform much more detailed headphone correction.
 
-This repository includes:
+本仓库包含：
 
-- AutoEq parametric-EQ to CXD3778GF table conversion tools.
-- A direct stock-kernel proc-write flow for A-series players.
-- A ZX300A `TYPE_Z` helper kernel module, `cxd3778gf_tone_apply`, that forces the in-memory table into CXD3778GF tone RAM.
-- Reproducible scripts, samples, research notes, and measurement helpers.
+This repository contains:
+
+- AutoEq / PEQ 到 CXD3778GF tone table 的转换工具。  
+  AutoEq / PEQ to CXD3778GF tone-table conversion tools.
+- minimum-phase WAV 目标响应拟合工具和绘图工具。  
+  minimum-phase WAV target fitting and plotting tools.
+- A 系列直接写表流程。  
+  direct table-write flow for A-series players.
+- ZX300A helper kernel module，用于强制把驱动内存中的 tone table 刷入 codec tone RAM。  
+  a ZX300A helper kernel module that forces the in-memory tone table into codec tone RAM.
+- 可复现实验脚本、样例和研究文档。  
+  reproducible scripts, samples, and research notes.
 
 ## 详细安装 / Installation
 
 ### 1. 前置条件 / Prerequisites
 
-- Linux or WSL.
-- Python 3.8+ with `numpy`, `scipy`, and `matplotlib` for fitting/plotting tools.
-- `adb` with root shell access to the Walkman.
-- For ZX300A helper modules: a prepared matching Sony 3.10.26 kernel tree and an ARM hard-float cross toolchain.
+- Linux 或 WSL。  
+  Linux or WSL.
+- Python 3.8+，以及 `numpy`, `scipy`, `matplotlib`。  
+  Python 3.8+ with `numpy`, `scipy`, and `matplotlib`.
+- 已开启 ADB 的 Walkman。  
+  A Walkman player with ADB enabled.
+- 若目标是 ZX300A / ZX / WM 路径，需要匹配设备固件的 Sony kernel source 和 ARM 交叉编译工具链。  
+  For ZX300A / ZX / WM, matching Sony kernel source and an ARM cross toolchain are required.
+
+安装 Python 依赖：
 
 Install Python dependencies:
 
@@ -91,85 +162,132 @@ python3 -m pip install -r requirements.txt
 
 ### 2. 解锁 ADB / Unlock ADB
 
-ADB 解锁需要修改官方固件安装脚本，让播放器在安装固件时开启调试入口。详见：
+ADB 是部署和调试的基础。推荐方法是修改官方固件安装脚本，在固件安装过程中开启 ADB/root 调试入口。Sony 官方固件安装器主要面向 Windows；Linux/WSL 下通常要依赖 Rockbox 或社区逆向得到的非官方工具解包/回包，所以普通用户优先使用 PowerShell/CMD 脚本。
 
-See the dedicated guide:
+ADB is required for deployment and debugging. The recommended route is patching a copy of the official firmware installer script so ADB/root debugging is enabled during firmware installation. Sony's official firmware updater is primarily Windows-oriented; Linux/WSL unpack/repack flows usually depend on Rockbox or other community reverse-engineered unofficial tools, so normal users should prefer the PowerShell/CMD scripts.
+
+请先阅读：
+
+Read first:
 
 - [docs/adb-unlock.zh-en.md](docs/adb-unlock.zh-en.md)
-- helper script: [scripts/patch_firmware_adb_unlock.sh](scripts/patch_firmware_adb_unlock.sh)
+- [scripts/patch_firmware_adb_unlock.ps1](scripts/patch_firmware_adb_unlock.ps1)
+- [scripts/patch_firmware_adb_unlock.cmd](scripts/patch_firmware_adb_unlock.cmd)
+- [scripts/patch_firmware_adb_unlock.sh](scripts/patch_firmware_adb_unlock.sh)
 
-### 3. A 系列写入 / A-Series Deployment
+该脚本会引导用户提供固件包位置、解包固件、定位安装脚本、注入 ADB 命令、重新打包，并提示用户替换安装器中的固件文件。必须保留原始固件备份。
 
-A50 实测可直接写入 `/proc/icx_audio_cxd3778gf_data/tct_*`，并通过 readback 验证。通常 `sg` 是普通平衡/耳放路径下的 general headphone table。
+The helper script guides the user to provide a firmware package, unpack it, locate installer scripts, inject ADB commands, repack the package, and replace the firmware file used by the installer. Always keep an untouched firmware backup.
+
+### 3. 安装自定义调音表 / Install a Custom Tone Table
+
+A 系列：
+
+A-series:
 
 ```bash
-tools/apply_cxd3778gf_peq_adb.sh --input my-autoeq.txt --target sg --filter-strategy best
+bash scripts/install_tone_table.sh --device-class a --input my-autoeq.txt --target sg
 ```
 
-### 4. ZX / WM 系列写入 / ZX/WM Deployment
+ZX / WM 系列：
 
-ZX300A stock driver 在 `TYPE_Z` 上会跳过 `adjust_tone_control()` 的 tone RAM 写入。流程是先写完整 `/proc/.../tct`，再通过 `cxd3778gf_tone_apply` 模块手动执行 stock MEM 写入序列。
+ZX / WM series:
 
 ```bash
 bash scripts/build_zx300_tone_apply.sh
 bash experiments/reproduce/97_install_cxd3778gf_tone_apply_module.sh
-bash experiments/reproduce/98_apply_cxd3778gf_tone_ram.sh
+bash scripts/install_tone_table.sh --device-class zx --table path/to/full-table.tbl
 ```
 
-迁移到其他 ZX / WM 机型时，请先阅读：
+迁移到其他 ZX / WM 机型前，请阅读 [skills/ZX300_BUILD_SKILL.md](skills/ZX300_BUILD_SKILL.md)。该文档以 ZX300 为例列出符号地址、结构体、寄存器和编译流程中需要人工或 AI agent 检查的点。
 
-- [ZX300 构建 Skill](docs/ZX300_BUILD_SKILL.md)
-- [部署指南](docs/deployment.zh-en.md)
+Before adapting this to another ZX / WM model, read [skills/ZX300_BUILD_SKILL.md](skills/ZX300_BUILD_SKILL.md). It uses ZX300 as the reference and lists the symbol addresses, structures, registers, and build assumptions that must be checked by a human or AI agent.
 
 ## 算法原理 / Algorithm
 
-PEQ 到调音表的转换分三步：
+AutoEq 常见输出是 parametric EQ，也就是若干 peak、low-shelf、high-shelf 滤波器。每段 PEQ 可以用一个二阶 IIR 表示。项目使用 RBJ Audio EQ Cookbook 公式，把 `PK`、`LS`、`HS` 三类滤波器转换成标准 biquad 系数：
 
-1. Parse AutoEq filters: `PK`, `LS`, `HS`, preamp, frequency, gain, Q.
-2. Convert each PEQ filter to a normalized RBJ biquad at both 44.1 kHz and 48 kHz.
-3. Encode each coefficient as signed 40-bit big-endian Q37 and append Sony's `sum32/xor32` checksum.
+AutoEq usually outputs parametric EQ: peak, low-shelf, and high-shelf filters. Each PEQ filter can be represented by a second-order IIR section. This project uses the RBJ Audio EQ Cookbook formulas to convert `PK`, `LS`, and `HS` filters into normalized biquad coefficients:
 
-当 AutoEq 提供超过五段滤波器时，硬件容量不足。本项目提供多种裁剪策略：
+```text
+b0, b1, b2, a1, a2
+```
 
-- `first`: 保持输入顺序取前五段。
-- `largest`: 取绝对增益最大的五段。
-- `wide`: 优先低 Q / shelf 这类宽影响滤波器。
-- `greedy`: 贪心降低全响应 RMS 误差。
-- `best`: 枚举可行组合，选择 RMS 误差最低的一组。
+CXD3778GF tone table 的 coefficient 顺序为：
 
-For full-waveform targets, the fitting tools can also optimize five stable SOS sections against a minimum-phase WAV target. The safest baseline remains RBJ-style filters; the Torch SOS optimizer is more flexible but must constrain pole radius, section peak, prefix peak, and Q37 coefficient range.
+The CXD3778GF table stores coefficients in this order:
 
-More detail:
+```text
+b0, b1, b2, -a1, -a2
+```
 
-- [docs/algorithm.zh-en.md](docs/algorithm.zh-en.md)
+每个系数编码为 signed 40-bit big-endian Q37 定点数。一个 table chunk 有两个 160-byte half，当前解释为 44.1 kHz family 和 48 kHz family；每个 half 的前 25 个 40-bit word 对应 5 个 biquad。
+
+Each coefficient is encoded as signed 40-bit big-endian Q37. A table chunk has two 160-byte halves, currently interpreted as the 44.1 kHz and 48 kHz families. The first 25 40-bit words of each half represent five biquads.
+
+由于硬件只有 5 个级联 biquad，AutoEq 超过五段时需要裁剪或拟合。本项目提供 `first`、`largest`、`wide`、`greedy`、`best` 等策略；也提供从 RBJ 初值出发、对目标频响进行直接优化的工具，并可对 1 kHz 到 6 kHz 人耳敏感频段赋予更高权重。
+
+Because the hardware exposes only five cascaded biquads, AutoEq profiles with more than five filters must be reduced or fitted. The project provides `first`, `largest`, `wide`, `greedy`, and `best` strategies, plus direct response optimization initialized from RBJ filters. The optimizer can place extra weight on the 1 kHz to 6 kHz sensitive band.
+
+详见 [docs/algorithm.zh-en.md](docs/algorithm.zh-en.md)。
+
+For details, see [docs/algorithm.zh-en.md](docs/algorithm.zh-en.md).
+
+## 项目背景与构建 / Background and Build Story
+
+这个项目的切入点来自三个方向：
+
+This project came from three converging clues:
+
+- `unknown321/wampy` 对 Walkman 音量表和调音路径的研究。  
+  `unknown321/wampy` research into Walkman volume tables and tuning paths.
+- Sony kernel source 中 `cxd3778gf` / `cxd3774gf` codec 驱动暴露的 tone-control table、proc 节点和 codec MEM 写入流程。  
+  Sony kernel source exposes the `cxd3778gf` / `cxd3774gf` codec driver, tone-control tables, proc nodes, and codec MEM write path.
+- 原生固件对特定耳机进行特殊调音，这暗示 tone table 是一个可利用的真实 DSP/IIR 入口。  
+  Stock firmware applies special tuning for certain headphones, which implies the tone table is a real DSP/IIR entry point.
+
+实验上，我们先在 A50 上通过 4 kHz 和低频的 +20 dB / -20 dB 表验证了五级 IIR 假设；再发现 ZX300A 的 `TYPE_Z` 路径不会自动 apply tone RAM；最后实现了 `cxd3778gf_tone_apply`，在不 patch kernel text 的情况下调用原始寄存器写入函数，把驱动内存中的表刷入 CXD3778GF。
+
+Experimentally, we first validated the five-biquad IIR model on A50 using audible +20 dB / -20 dB probes at 4 kHz and low frequencies. Then we found that ZX300A's `TYPE_Z` path does not automatically apply tone RAM. Finally, `cxd3778gf_tone_apply` was implemented to call the stock register-write functions and push the in-memory table into CXD3778GF without patching kernel text.
+
+更多研究记录见：
+
+More notes:
+
+- [docs/background.zh-en.md](docs/background.zh-en.md)
 - [docs/methods.zh.md](docs/methods.zh.md)
+- [docs/research-notes.en.md](docs/research-notes.en.md)
 
-## 背景与构建 / Background and Build
+## 致谢、版权与 License / Credits, Copyright, and License
 
-固件源码与前人研究共同暗示了这条路径：
+感谢：
 
-- Wampy 的滤波链研究指出 Walkman 的滤波器由 `libSoundServiceFw.so` 组织，不同机型/固件更多是软件锁和表数据差异。
-- Sony kernel driver `sound/soc/codecs/cxd3774gf/cxd3774gf.c`/`cxd3778gf` 相关符号暴露了 tone-control table、`/proc/icx_audio_cxd3778gf_data/tct` 和 codec MEM 写入路径。
-- A50 上 `tc_1291.tbl[:-8]` 与 `/proc/.../tct` 完全对应，9 个 chunk 分别映射 `tct_nh/ng/nnw500/.../sg/...`。
-- ZX300A 上只读状态模块显示 `board_type=TYPE_Z`，stock 路径跳过 tone RAM reload；因此需要 helper module。
+Thanks to:
 
-The project evolved from raw firmware/table dumps, then table layout identification, audible probes, Q37 coefficient modeling, AutoEq conversion, constrained IIR fitting, and finally the ZX300A helper module.
+- AutoEq 项目和社区提供的耳机校正数据与方法论。  
+  The AutoEq project and community for headphone correction data and methodology.
+- `unknown321/wampy` 以及 Walkman 自定义固件研究者提供的线索。  
+  `unknown321/wampy` and Walkman custom-firmware researchers for the clues.
+- Sony 发布的 GPL kernel source，使得 `cxd3778gf` 路径可以被审计。  
+  Sony GPL kernel source releases, which made the `cxd3778gf` path auditable.
+- 所有愿意拿真实设备测试、备份、恢复、对比试听的人。  
+  Everyone who tested, backed up, restored, and listened on real hardware.
 
-## 致谢、版权与 License / Credits, Copyright, License
+许可说明：
 
-感谢 / Thanks:
+License summary:
 
-- AutoEq community for headphone correction data and methodology.
-- Wampy and Walkman custom-firmware researchers for filter-chain and table-path clues.
-- Sony GPL kernel source releases, which made the `cxd3778gf` path auditable.
-- All testers willing to risk time, ears, and recovery procedures on real hardware.
+- 本仓库采用 **CC BY-NC-SA 4.0**。  
+  This repository uses **CC BY-NC-SA 4.0**.
+- 源码、脚本、内核模块、文档和图表允许个人学习、研究、验证、非商业分享和非商业改作。  
+  Source code, scripts, kernel modules, documents, and figures may be used for personal study, research, validation, non-commercial sharing, and non-commercial adaptations.
+- 禁止任何商业使用，包括但不限于付费安装、付费刷机、付费调音服务、商业维修/改机服务、付费调音包、商业固件或商业产品集成。  
+  Commercial use is prohibited, including paid installation, paid flashing, paid tuning services, commercial repair/modification services, paid tuning packs, commercial firmware, or commercial product integration.
+- 分享改作必须注明作者、来源和修改，并继续使用 CC BY-NC-SA 4.0。  
+  Shared adaptations must credit the authors/source, indicate changes, and remain under CC BY-NC-SA 4.0.
+- Sony 固件、Sony 二进制、原厂 tone table、第三方数据集和 AutoEq 数据不属于本项目授权范围。  
+  Sony firmware, Sony binaries, stock tone tables, third-party datasets, and AutoEq data are not licensed by this project.
 
-Licensing:
+完整条款见 [LICENSE](LICENSE) 和 [docs/license.zh-en.md](docs/license.zh-en.md)。
 
-- Source code in `tools/`, `scripts/`, `experiments/`, and `kernel_modules/` is licensed under **GPL-3.0-or-later**. GPL does not prohibit commercial use; it requires source availability and copyleft compliance.
-- Documentation, articles, and research notes in `README.md` and `docs/` are licensed under **CC BY-NC-ND 4.0**: attribution required, non-commercial use only, no modified redistribution.
-- Device firmware, Sony binaries, stock tone tables, and third-party datasets are not included. You must obtain them legally from your own device or upstream source.
-
-本项目按原样提供，不承诺适配任何设备，也不承担刷机、损坏设备、听力风险或数据丢失责任。
-
-This project is provided as-is, with no warranty and no guarantee of device compatibility or safety.
+See [LICENSE](LICENSE) and [docs/license.zh-en.md](docs/license.zh-en.md) for the full terms.

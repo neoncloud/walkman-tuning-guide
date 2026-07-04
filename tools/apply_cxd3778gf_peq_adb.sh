@@ -2,7 +2,8 @@
 set -euo pipefail
 
 ADB=${ADB:-/mnt/e/Downloads/platform-tools/adb.exe}
-WORKDIR=${WORKDIR:-$HOME/zx300-peq-research}
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WORKDIR=${WORKDIR:-$ROOT}
 REMOTE_DIR=${REMOTE_DIR:-/contents/wampy_probe/peq_apply}
 TARGET=sg
 RESTORE=0

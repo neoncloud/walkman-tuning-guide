@@ -25,6 +25,8 @@ TABLE_NAMES = [
 CHUNK_SIZE = 320
 BODY_SIZE = CHUNK_SIZE * len(TABLE_NAMES)
 CHECKSUM_SIZE = 8
+WORD_SCALE = 1 << 37
+WORD_SIZE = 5
 
 
 def checksum(body: bytes):
@@ -92,6 +94,31 @@ def add_checksum(in_path: Path, out_path: Path):
     out_path.write_bytes(body + struct.pack("<II", *checksum(body)))
 
 
+def encode_q37_word(value: int) -> bytes:
+    if value < 0:
+        value = (1 << 40) + value
+    return value.to_bytes(WORD_SIZE, "big", signed=False)
+
+
+def make_identity_chunk() -> bytes:
+    words = []
+    for _ in range(2):
+        for _section in range(5):
+            words.extend([WORD_SCALE, 0, 0, 0, 0])
+        words.extend([0] * 7)
+    chunk = b"".join(encode_q37_word(word) for word in words)
+    if len(chunk) != CHUNK_SIZE:
+        raise AssertionError(f"identity chunk size mismatch: {len(chunk)}")
+    return chunk
+
+
+def make_identity_table(out_path: Path):
+    chunk = make_identity_chunk()
+    body = chunk * len(TABLE_NAMES)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(body + struct.pack("<II", *checksum(body)))
+
+
 def split(path: Path, out_dir: Path):
     body, _ = read_table(path)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -116,6 +143,8 @@ def main():
     p = sub.add_parser("add-checksum")
     p.add_argument("body", type=Path)
     p.add_argument("out", type=Path)
+    p = sub.add_parser("make-identity")
+    p.add_argument("out", type=Path)
     p = sub.add_parser("split")
     p.add_argument("table", type=Path)
     p.add_argument("out_dir", type=Path)
@@ -129,6 +158,8 @@ def main():
         inspect(args.table)
     elif args.cmd == "add-checksum":
         add_checksum(args.body, args.out)
+    elif args.cmd == "make-identity":
+        make_identity_table(args.out)
     elif args.cmd == "split":
         split(args.table, args.out_dir)
     elif args.cmd == "replace-chunk":

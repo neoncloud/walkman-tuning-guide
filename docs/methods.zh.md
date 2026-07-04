@@ -3,7 +3,7 @@
 本文档记录 Walkman A50 / ZX300 系列 `cxd3778gf` tone table 的当前理解、拟合算法和复现方式。所有路径默认位于 WSL：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 ```
 
 ## 目标
@@ -46,14 +46,14 @@ b0, b1, b2, -a1, -a2
 恢复 stock：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/90_restore_stock_tct.sh
 ```
 
 应用当前推荐 Blessing 3 表：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/91_apply_best_torch_sgd_5sos.sh
 ```
 
@@ -94,7 +94,7 @@ tools/fit_cxd3778gf_iir_to_wav.py
 复现：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/10_blessing3_rbj_wav_fit.sh
 ```
 
@@ -132,7 +132,7 @@ tools/fit_cxd3778gf_torch_sos_to_wav.py
 复现：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/20_blessing3_torch_sgd_5sos.sh
 ```
 
@@ -151,7 +151,7 @@ bash experiments/reproduce/20_blessing3_torch_sgd_5sos.sh
 复现：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/21_blessing3_torch_sgd_4sos_pregain.sh
 ```
 
@@ -172,7 +172,7 @@ bash experiments/reproduce/21_blessing3_torch_sgd_4sos_pregain.sh
 复现：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/30_blessing3_iirnet8_pregain.sh
 ```
 
@@ -191,7 +191,7 @@ bash experiments/reproduce/30_blessing3_iirnet8_pregain.sh
 复现：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/40_blessing3_yulewalk_order10.sh
 ```
 
@@ -227,14 +227,14 @@ Torch / IIRNet / Yule-Walker 脚本输出在各自目录的 `plots/` 下。
 完整复现当前推荐生成结果：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/20_blessing3_torch_sgd_5sos.sh
 ```
 
 完整复现 RBJ 安全基线：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/10_blessing3_rbj_wav_fit.sh
 ```
 
@@ -338,14 +338,14 @@ would_select_tone_table=5(tct_sg/samp_general_hp)
 - 正式应用 BL3 all-target RBJ 表的复现命令：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/94_apply_bl3_zx300a_all_targets_and_tone_ram.sh
 ```
 
 恢复 stock 并刷回硬件：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/93_restore_zx300a_stock_tct_and_tone_ram.sh
 ```
 
@@ -365,21 +365,21 @@ bash experiments/reproduce/93_restore_zx300a_stock_tct_and_tone_ram.sh
 安装脚本：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/97_install_cxd3778gf_tone_apply_autoload.sh
 ```
 
 设置自动应用的 table：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/98_set_cxd3778gf_tone_autoload_table.sh
 ```
 
 卸载脚本：
 
 ```bash
-cd /home/neoncloud/zx300-peq-research
+cd /home/neoncloud/walkman-tuning-guide
 bash experiments/reproduce/99_uninstall_cxd3778gf_tone_apply_autoload.sh
 ```
 

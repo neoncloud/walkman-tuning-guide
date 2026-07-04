@@ -2,18 +2,46 @@
 set -euo pipefail
 
 APPLY=0
-FIRMWARE=
-UPGTOOL=
+FIRMWARE="${FIRMWARE:-}"
+UPGTOOL="${UPGTOOL:-}"
 OUT_DIR=
 
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/patch_firmware_adb_unlock.sh --firmware NW_WM_FW.UPG --upgtool upgtool-v3.exe [--out-dir out/adb-unlock] [--apply]
+  scripts/patch_firmware_adb_unlock.sh [--firmware NW_WM_FW.UPG] [--upgtool upgtool-v3.exe] [--out-dir out/adb-unlock] [--apply]
 
-The script never edits the original firmware package. Without --apply it only
-prints the planned workspace and commands.
+Without --apply, the script only prints the planned workspace and candidate
+files. With --apply, it copies the firmware, asks the user to unpack it when
+needed, patches one installer script with an ADB unlock block, and prints the
+repack/replace steps.
+
+Environment:
+  FIRMWARE=/path/to/NW_WM_FW.UPG
+  UPGTOOL=/path/to/upgtool-v3.exe
+  UNPACKED_DIR=/path/to/unpacked/firmware
 USAGE
+}
+
+find_first_file() {
+  local pattern=$1
+  shift
+  local dir
+  for dir in "$@"; do
+    [[ -d "$dir" ]] || continue
+    find "$dir" -maxdepth 3 -type f -iname "$pattern" 2>/dev/null | head -1
+  done
+}
+
+prompt_path() {
+  local label=$1
+  local current=$2
+  if [[ -n "$current" ]]; then
+    printf '%s\n' "$current"
+    return
+  fi
+  read -r -p "$label: " current
+  printf '%s\n' "$current"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -27,48 +55,91 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$FIRMWARE" && -f "$FIRMWARE" ]] || { echo "missing --firmware" >&2; exit 2; }
-[[ -n "$UPGTOOL" && -f "$UPGTOOL" ]] || { echo "missing --upgtool" >&2; exit 2; }
-
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="${OUT_DIR:-$ROOT/out/adb-unlock}"
 WORK="$OUT_DIR/work"
 PATCHED="$OUT_DIR/patched"
 
-echo "firmware: $FIRMWARE"
-echo "upgtool:  $UPGTOOL"
-echo "work:     $WORK"
-echo "patched:  $PATCHED"
+if [[ -z "$FIRMWARE" ]]; then
+  FIRMWARE="$(find_first_file '*.UPG' "$PWD" "$HOME/Downloads" /mnt/e/Downloads /mnt/d/Downloads || true)"
+fi
+if [[ -z "$UPGTOOL" ]]; then
+  UPGTOOL="$(find_first_file 'upgtool*.exe' "$PWD" "$HOME/Downloads" /mnt/e/Downloads /mnt/d/Downloads || true)"
+fi
+
+if [[ -z "$FIRMWARE" || ! -f "$FIRMWARE" ]]; then
+  FIRMWARE="$(prompt_path 'Firmware package path' "$FIRMWARE")"
+fi
+if [[ -z "$UPGTOOL" || ! -f "$UPGTOOL" ]]; then
+  UPGTOOL="$(prompt_path 'upgtool executable path' "$UPGTOOL")"
+fi
+
+[[ -f "$FIRMWARE" ]] || { echo "firmware not found: $FIRMWARE" >&2; exit 2; }
+[[ -f "$UPGTOOL" ]] || { echo "upgtool not found: $UPGTOOL" >&2; exit 2; }
+
+cat <<EOF
+Firmware: $FIRMWARE
+upgtool:  $UPGTOOL
+work:     $WORK
+patched:  $PATCHED
+mode:     $([[ "$APPLY" -eq 1 ]] && echo apply || echo dry-run)
+EOF
 
 if [[ "$APPLY" -ne 1 ]]; then
-  echo "dry run only; add --apply to copy, unpack, patch, and repack"
+  cat <<'EOF'
+
+Dry-run only. Re-run with --apply after checking the paths.
+The original firmware will not be modified in place.
+EOF
   exit 0
 fi
 
 mkdir -p "$WORK" "$PATCHED"
-cp "$FIRMWARE" "$WORK/original.UPG"
+cp -f "$FIRMWARE" "$WORK/original.UPG"
 
-echo "Unpack the firmware with your upgtool, then place unpacked files under:"
-echo "  $WORK/unpacked"
-echo
-echo "This repository intentionally does not encode a universal upgtool command,"
-echo "because command-line syntax differs between leaked/community builds."
-echo "After unpacking, run this script again with UNPACKED_DIR=$WORK/unpacked."
+UNPACKED_DIR="${UNPACKED_DIR:-$WORK/unpacked}"
+if [[ ! -d "$UNPACKED_DIR" ]]; then
+  cat <<EOF
 
-UNPACKED_DIR="${UNPACKED_DIR:-}"
-if [[ -z "$UNPACKED_DIR" || ! -d "$UNPACKED_DIR" ]]; then
+Next step:
+  1. Use your upgtool build to unpack:
+       $WORK/original.UPG
+  2. Put the unpacked firmware tree at:
+       $UNPACKED_DIR
+  3. Re-run this script with the same arguments and --apply.
+
+The repository does not hard-code one universal upgtool command because
+community upgtool builds use different CLI syntax.
+EOF
   exit 0
 fi
 
-candidate="$(grep -RIl 'adbd\|setprop\|persist.sys.usb\|install' "$UNPACKED_DIR" | head -1 || true)"
-[[ -n "$candidate" ]] || { echo "no candidate installer script found" >&2; exit 1; }
+mapfile -t candidates < <(grep -RIlE 'adbd|persist\.sys\.usb|setprop|install|update' "$UNPACKED_DIR" 2>/dev/null | head -20)
+if [[ "${#candidates[@]}" -eq 0 ]]; then
+  echo "no candidate installer script found under $UNPACKED_DIR" >&2
+  exit 1
+fi
 
+echo "Candidate installer scripts:"
+for i in "${!candidates[@]}"; do
+  printf '  [%d] %s\n' "$i" "${candidates[$i]}"
+done
+
+choice=0
+read -r -p "Patch which script? [0] " choice_input || true
+if [[ -n "${choice_input:-}" ]]; then
+  choice=$choice_input
+fi
+[[ "$choice" =~ ^[0-9]+$ && "$choice" -lt "${#candidates[@]}" ]] || { echo "invalid choice" >&2; exit 2; }
+
+candidate="${candidates[$choice]}"
 python3 - "$candidate" <<'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
-text = path.read_text(errors="ignore")
+data = path.read_bytes()
+text = data.decode("utf-8", errors="ignore")
 begin = "# Walkman tuning guide ADB unlock begin"
 end = "# Walkman tuning guide ADB unlock end"
 block = f"""
@@ -79,9 +150,21 @@ start adbd
 {end}
 """
 if begin not in text:
-    path.write_text(text.rstrip() + "\n" + block)
+    path.write_text(text.rstrip() + "\n" + block, encoding="utf-8")
 print(path)
 PY
 
-echo "Patched candidate installer script: $candidate"
-echo "Now repack $UNPACKED_DIR with your upgtool and write the new UPG into $PATCHED."
+cat <<EOF
+
+Patched candidate installer script:
+  $candidate
+
+Now repack:
+  $UNPACKED_DIR
+
+Write the repacked firmware into:
+  $PATCHED
+
+Then replace the firmware file used by the official installer with the patched
+copy. Keep the original firmware package untouched for recovery.
+EOF
