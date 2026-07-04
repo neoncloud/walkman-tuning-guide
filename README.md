@@ -57,6 +57,25 @@ mkdir -p backups
 
 ### 3. 生成调音表 / Generate a Tone Table
 
+先从 [AutoEq](https://autoeq.app/) 下载目标耳机的 parametric EQ 文本。页面里需要关注滤波器类型、频率、增益、Q 值和 preamp，示例中红框位置就是需要复制/下载的参数。
+
+Download the parametric EQ text for your headphone from [AutoEq](https://autoeq.app/). Pay attention to filter type, frequency, gain, Q, and preamp. The red box in the example marks the parameters used by this project.
+
+![AutoEQ parameter example](docs/autoeq.png)
+
+下载后的文本通常类似：
+
+The downloaded text usually looks like:
+
+```text
+Preamp: -2.85 dB
+Filter 1: ON LSC Fc 105.0 Hz Gain 2.5 dB Q 0.70
+Filter 2: ON PK Fc 234.0 Hz Gain -0.5 dB Q 0.94
+Filter 3: ON PK Fc 3024.3 Hz Gain -2.3 dB Q 3.22
+Filter 4: ON PK Fc 9518.3 Hz Gain 6.4 dB Q 1.42
+Filter 5: ON HSC Fc 10000.0 Hz Gain -8.9 dB Q 0.70
+```
+
 从 AutoEq 文本生成五级 IIR 调音表：
 
 Generate a five-section IIR tone table from an AutoEq text profile:
