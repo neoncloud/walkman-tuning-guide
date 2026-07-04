@@ -220,6 +220,42 @@ bash scripts/install_tone_table.sh --device-class zx --table path/to/full-table.
 
 Before adapting this to another ZX / WM model, read [skills/ZX300_BUILD_SKILL.md](skills/ZX300_BUILD_SKILL.md). It uses ZX300 as the reference and lists the symbol addresses, structures, registers, and build assumptions that must be checked by a human or AI agent.
 
+## FAQ / 常见问题
+
+完整 FAQ 见 [docs/faq.zh-en.md](docs/faq.zh-en.md)。
+
+See [docs/faq.zh-en.md](docs/faq.zh-en.md) for the full FAQ.
+
+### 修改是永久的吗？ / Is the change permanent?
+
+只写 `/proc` 节点通常是运行时修改，重启后会回到开机加载的表；安装 autoload 或替换系统 `tc_*.tbl` 后会在开机时再次生效。
+
+Runtime `/proc` writes usually last until reboot. Autoload or system `tc_*.tbl` replacement re-applies the tuning at boot.
+
+### 修改是即时的吗？ / Is the change immediate?
+
+是的。tone table 推送到设备节点并触发加载后，立刻可以听到声音改变。
+
+Yes. Once the tone table is pushed to the device node and applied, the sound changes immediately.
+
+### 和其他音效兼容吗？ / Is it compatible with other effects?
+
+是的，可以和播放器自带其他音效叠加生效，包括 10-band EQ。注意叠加会减少余量，boost 过多时可能破音。
+
+Yes. It can stack with built-in effects, including the 10-band EQ. Stacking reduces headroom, so excessive boosts may clip.
+
+### 和其他自定义固件兼容吗？ / Is it compatible with custom firmware?
+
+据目前理解，[WalkmanOne](https://www.mrwalkman.com/p/walkman-one-zx300series.html) 这类自定义固件主要提供 sound signature、settings file 和 external tunings。本项目直接覆写内核节点中的 CXD3778GF tone table，因此通常兼容保留相同内核节点的自定义固件；但自定义固件原本加载的调音会被本项目写入的表覆盖。若某个固件修改了内核、节点或 table layout，则可能不兼容。
+
+As currently understood, custom firmware such as [WalkmanOne](https://www.mrwalkman.com/p/walkman-one-zx300series.html) provides sound signatures, settings, and external tunings. This project directly overwrites the CXD3778GF tone table through the kernel node, so it should work with custom firmware that keeps the same kernel node. The custom firmware's own tuning is replaced by this table. Firmware that changes the kernel, node, or table layout may be incompatible.
+
+### 声音异常怎么办？ / What if the sound becomes abnormal?
+
+滋滋声、破音、音量过低或过高，通常来自滤波器参数不安全：总增益过高、preamp 不够低、高 Q/大增益 section、中间级峰值过高、系数符号/量化错误，或与其他音效叠加过猛。先降低音量或停止播放，恢复 stock table，再用更保守的参数重新生成。
+
+Buzzing, clipping, very low/high volume, or harsh sound usually means unsafe filter parameters: too much total gain, insufficient preamp, high-Q/high-gain sections, excessive intermediate peaks, coefficient/sign mistakes, or too much stacking with other effects. Lower volume or stop playback, restore the stock table, then regenerate a more conservative tuning.
+
 ## 算法原理 / Algorithm
 
 AutoEq 常见输出是 parametric EQ，也就是若干 peak、low-shelf、high-shelf 滤波器。每段 PEQ 可以用一个二阶 IIR 表示。项目使用 RBJ Audio EQ Cookbook 公式，把 `PK`、`LS`、`HS` 三类滤波器转换成标准 biquad 系数：
