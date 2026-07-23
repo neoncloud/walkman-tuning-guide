@@ -38,10 +38,11 @@ Make a system/full-device backup first:
 ```bash
 cd /home/neoncloud/walkman-tuning-guide
 python3 -m pip install -r requirements.txt
-
-# Windows/WSL 用户可直接使用 E 盘 platform-tools
-export ADB=/mnt/e/Downloads/platform-tools/adb.exe
 ```
+
+Windows 用户请在 PowerShell 中使用 `.ps1` 脚本，并传入 Windows 版 `adb.exe`；Linux 用户请在 shell 中使用 `.sh` 脚本和 Linux 版 `adb`。不建议在 WSL 中混用 Windows `adb.exe`。
+
+Windows users should run the `.ps1` scripts from PowerShell with the Windows `adb.exe`. Linux users should run the `.sh` scripts with the Linux `adb`. Avoid mixing Windows `adb.exe` from WSL.
 
 播放器需要先开启 ADB。详细步骤见 [docs/adb-unlock.zh-en.md](docs/adb-unlock.zh-en.md)。
 
@@ -110,6 +111,16 @@ bash scripts/install_tone_table.sh \
   --target sg
 ```
 
+Windows / PowerShell:
+
+```powershell
+.\scripts\install_tone_table.ps1 `
+  -DeviceClass a `
+  -Input samples\sample-autoeq.txt `
+  -Target sg `
+  -Adb C:\path\to\platform-tools\adb.exe
+```
+
 ### 5. 部署到 ZX / WM 系列 / Deploy to ZX / WM
 
 ZX300A 实测 stock kernel 会更新驱动内存里的表，但不会在 `TYPE_Z` 路径上自动把表刷入 CXD3778GF tone RAM。因此需要安装 helper kernel module：
@@ -122,6 +133,15 @@ bash experiments/reproduce/97_install_cxd3778gf_tone_apply_module.sh
 bash scripts/install_tone_table.sh \
   --device-class zx \
   --table samples/autoeq/bl3-zx300a-rbj-refine-sensitive-all-targets/full-table/tc_127x.bl3-zx300a-rbj-refine-sensitive-all-targets.tbl
+```
+
+Windows / PowerShell table install after the helper module is already loaded:
+
+```powershell
+.\scripts\install_tone_table.ps1 `
+  -DeviceClass zx `
+  -Table samples\autoeq\bl3-zx300a-rbj-refine-sensitive-all-targets\full-table\tc_127x.bl3-zx300a-rbj-refine-sensitive-all-targets.tbl `
+  -Adb C:\path\to\platform-tools\adb.exe
 ```
 
 开机自动应用：
@@ -140,6 +160,15 @@ bash experiments/reproduce/98_set_cxd3778gf_tone_autoload_table.sh \
 bash scripts/restore_stock_tone_table.sh --device-class zx
 bash experiments/reproduce/99_uninstall_cxd3778gf_tone_apply_autoload.sh
 bash experiments/reproduce/99_uninstall_cxd3778gf_tone_apply_module.sh
+```
+
+Windows / PowerShell:
+
+```powershell
+.\scripts\restore_stock_tone_table.ps1 `
+  -DeviceClass zx `
+  -StockTable backups\tc_127x.tbl `
+  -Adb C:\path\to\platform-tools\adb.exe
 ```
 
 更多部署细节见 [docs/deployment.zh-en.md](docs/deployment.zh-en.md)。

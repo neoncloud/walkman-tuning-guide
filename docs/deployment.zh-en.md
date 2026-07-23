@@ -25,7 +25,26 @@ Validated:
 ```bash
 cd /home/neoncloud/walkman-tuning-guide
 python3 -m pip install -r requirements.txt
-export ADB=/mnt/e/Downloads/platform-tools/adb.exe
+```
+
+Windows 用户应使用 PowerShell 和 Windows 版 `adb.exe`：
+
+Windows users should use PowerShell with the Windows `adb.exe`:
+
+```powershell
+cd C:\path\to\walkman-tuning-guide
+python -m pip install -r requirements.txt
+$env:ADB = "C:\path\to\platform-tools\adb.exe"
+```
+
+Linux 用户应使用 bash 和 Linux 版 `adb`：
+
+Linux users should use bash with the Linux `adb`:
+
+```bash
+cd /path/to/walkman-tuning-guide
+python3 -m pip install -r requirements.txt
+export ADB=/path/to/adb
 ```
 
 备份：
@@ -59,12 +78,28 @@ bash tools/apply_cxd3778gf_peq_adb.sh \
   --filter-strategy best
 ```
 
+Windows / PowerShell:
+
+```powershell
+.\scripts\install_tone_table.ps1 `
+  -DeviceClass a `
+  -Input my-autoeq.txt `
+  -Target sg `
+  -FilterStrategy best
+```
+
 还原：
 
 Restore:
 
 ```bash
 bash tools/apply_cxd3778gf_peq_adb.sh --restore --target sg
+```
+
+Windows / PowerShell:
+
+```powershell
+.\scripts\restore_stock_tone_table.ps1 -DeviceClass a -Target sg
 ```
 
 ## ZX / WM Helper Module 路径 / ZX / WM Helper Module Path
@@ -101,6 +136,14 @@ Apply the Blessing 3 sample table:
 
 ```bash
 bash experiments/reproduce/94_apply_bl3_rbj_refine_sensitive_zx300a_and_tone_ram.sh
+```
+
+Windows / PowerShell, after the helper module is loaded:
+
+```powershell
+.\scripts\install_tone_table.ps1 `
+  -DeviceClass zx `
+  -Table samples\autoeq\bl3-zx300a-rbj-refine-sensitive-all-targets\full-table\tc_127x.bl3-zx300a-rbj-refine-sensitive-all-targets.tbl
 ```
 
 ## 开机自动加载 / Autoload

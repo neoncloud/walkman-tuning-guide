@@ -15,6 +15,7 @@ backups/
 device-dumps/
 *.wav
 *.UPG
+*.lnk
 *.bin
 *.tbl
 !samples/filter-strategy/*.bin
