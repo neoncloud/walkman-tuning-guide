@@ -115,7 +115,7 @@ def check_q37_preamp_distribution(tmp: Path) -> None:
         5,
     )
     if not preamp < requested_preamp:
-        fail("EVO fixture should require additional headroom at the 4x tone-DSP clocks")
+        fail("EVO fixture should require additional headroom at the fixed family tone-DSP clocks")
     freqs = peq.logspace(20.0, 20000.0, 512)
     for half, fs in ((0, peq.DEFAULT_TONE_FS_441), (1, peq.DEFAULT_TONE_FS_48)):
         encoded = plotter.decode_sections(blob, half)

@@ -3,8 +3,8 @@
 
 The CXD3778GF tone RAM chunk used by tc_*.tbl is 320 bytes:
   - two 160-byte halves for the 44.1k-family and 48k-family coefficient sets
-  - hardware measurements show that the tone IIR runs at 4x the audio rate,
-    so the default coefficient clocks are 176.4 kHz and 192 kHz
+  - hardware measurements show fixed family clocks near 176.4 and 192 kHz;
+    these are 4x only at the 44.1 and 48 kHz base input rates
   - each half has 32 signed 40-bit big-endian Q37 words
   - words 0..24 are interpreted as five biquad sections of
     b0, b1, b2, -a1, -a2
@@ -34,14 +34,13 @@ HALF_SIZE = HALF_WORDS * 5
 CHUNK_SIZE = HALF_SIZE * 2
 CHECKSUM_SIZE = 8
 
-# ZX300A USB DAC 回环实测：48 kHz 输入下，按 48 kHz 设计的 1 kHz 峰值会
-# 出现在约 4 kHz；改按 192 kHz 设计后中心回到 1 kHz。因此两个 half 默认
-# 使用对应音频采样率的 4 倍 tone-DSP 时钟。CLI 仍允许覆盖，便于验证其他机型。
+# ZX300A USB DAC 八档回环实测：44.1 kHz 家族固定在约 176.4 kHz，48 kHz
+# 家族固定在约 192 kHz。它们只在基础档分别等于输入采样率的 4 倍；在更高
+# 输入档位下依次是 2 倍、1 倍和 0.5 倍。CLI 仍允许覆盖，便于验证其他机型。
 AUDIO_FS_441 = 44100.0
 AUDIO_FS_48 = 48000.0
-TONE_DSP_RATE_MULTIPLIER = 4.0
-DEFAULT_TONE_FS_441 = AUDIO_FS_441 * TONE_DSP_RATE_MULTIPLIER
-DEFAULT_TONE_FS_48 = AUDIO_FS_48 * TONE_DSP_RATE_MULTIPLIER
+DEFAULT_TONE_FS_441 = 176400.0
+DEFAULT_TONE_FS_48 = 192000.0
 
 
 @dataclass

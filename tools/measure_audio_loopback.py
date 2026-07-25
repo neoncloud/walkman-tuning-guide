@@ -171,6 +171,22 @@ def main() -> None:
     )
     parser.add_argument("--sample-rate", type=int, default=48000)
     parser.add_argument(
+        "--input-sample-rate",
+        type=int,
+        help="录音设备采样率；默认沿用 --sample-rate",
+    )
+    parser.add_argument(
+        "--output-sample-rate",
+        type=int,
+        help="播放设备采样率；默认沿用 --sample-rate",
+    )
+    parser.add_argument(
+        "--output-channel",
+        choices=("both", "left", "right"),
+        default="both",
+        help="播放到双声道、仅左声道或仅右声道",
+    )
+    parser.add_argument(
         "--signal",
         choices=("log-sweep", "periodic-noise"),
         default="log-sweep",
@@ -191,7 +207,9 @@ def main() -> None:
     parser.add_argument("--noise-seed", type=int, default=3778)
     args = parser.parse_args()
 
-    if not (0.0 < args.start_hz < args.end_hz < args.sample_rate / 2.0):
+    input_sample_rate = args.input_sample_rate or args.sample_rate
+    output_sample_rate = args.output_sample_rate or args.sample_rate
+    if not (0.0 < args.start_hz < args.end_hz < output_sample_rate / 2.0):
         raise SystemExit("扫频范围必须满足 0 < start < end < Nyquist。")
     if args.repetitions < 1:
         raise SystemExit("--repetitions 必须至少为 1。")
@@ -208,18 +226,18 @@ def main() -> None:
         device=input_index,
         channels=input_channels,
         dtype="float32",
-        samplerate=args.sample_rate,
+        samplerate=input_sample_rate,
     )
     sd.check_output_settings(
         device=output_index,
         channels=2,
         dtype="float32",
-        samplerate=args.sample_rate,
+        samplerate=output_sample_rate,
     )
 
     if args.signal == "log-sweep":
-        stimulus, sweep_starts, sweep_samples = make_stimulus(
-            sample_rate=args.sample_rate,
+        stimulus, output_sweep_starts, output_sweep_samples = make_stimulus(
+            sample_rate=output_sample_rate,
             start_hz=args.start_hz,
             end_hz=args.end_hz,
             sweep_seconds=args.sweep_seconds,
@@ -230,13 +248,13 @@ def main() -> None:
             level_dbfs=args.level_dbfs,
             fade_seconds=args.fade_seconds,
         )
-        active_start = sweep_starts[0]
-        active_end = sweep_starts[-1] + sweep_samples
+        output_active_start = output_sweep_starts[0]
+        output_active_end = output_sweep_starts[-1] + output_sweep_samples
     else:
         if args.periods < 3 or not (0 <= args.settle_periods < args.periods):
             raise SystemExit("--periods 至少为 3，且 0 <= --settle-periods < --periods。")
-        stimulus, active_start, period_samples = make_periodic_noise_stimulus(
-            sample_rate=args.sample_rate,
+        stimulus, output_active_start, output_period_samples = make_periodic_noise_stimulus(
+            sample_rate=output_sample_rate,
             start_hz=args.start_hz,
             end_hz=args.end_hz,
             period_samples=args.period_samples,
@@ -246,20 +264,31 @@ def main() -> None:
             level_dbfs=args.level_dbfs,
             seed=args.noise_seed,
         )
-        active_end = active_start + period_samples * args.periods
+        output_active_end = output_active_start + output_period_samples * args.periods
+
+    if args.output_channel == "left":
+        stimulus[:, 1] = 0.0
+    elif args.output_channel == "right":
+        stimulus[:, 0] = 0.0
+
+    def output_to_input_sample(sample: int) -> int:
+        return int(round(sample * input_sample_rate / output_sample_rate))
+
+    active_start = output_to_input_sample(output_active_start)
+    active_end = output_to_input_sample(output_active_end)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    stimulus_path = args.output_dir / f"stimulus_{args.signal}.wav"
+    stimulus_path = args.output_dir / f"stimulus_{args.signal}_{output_sample_rate}hz.wav"
     recording_path = args.output_dir / f"{args.label}.wav"
     metadata_path = args.output_dir / f"{args.label}.json"
     if stimulus_path.exists():
         old_rate, old_stimulus = wavfile.read(stimulus_path)
-        if old_rate != args.sample_rate or sha256_array(old_stimulus) != sha256_array(stimulus):
+        if old_rate != output_sample_rate or sha256_array(old_stimulus) != sha256_array(stimulus):
             raise SystemExit(
                 f"{stimulus_path} 已存在但内容不同；请换一个输出目录，避免混用实验激励。"
             )
     else:
-        wavfile.write(stimulus_path, args.sample_rate, stimulus)
+        wavfile.write(stimulus_path, output_sample_rate, stimulus)
 
     is_wasapi = "wasapi" in args.host_api.casefold()
     is_wdm_ks = "wdm-ks" in args.host_api.casefold()
@@ -273,9 +302,9 @@ def main() -> None:
         f"录音：[{input_index}] {input_device['name']} / {input_api['name']}"
     )
     print(
-        f"开始采集 {len(stimulus) / args.sample_rate:.1f} 秒，"
+        f"开始采集 {len(stimulus) / output_sample_rate:.1f} 秒，"
         f"{args.start_hz:g}-{args.end_hz:g} Hz，{args.level_dbfs:g} dBFS，"
-        f"信号={args.signal}，"
+        f"信号={args.signal}，播放={output_sample_rate} Hz，录音={input_sample_rate} Hz，"
         f"{mode_text}。"
     )
     extra_settings = None
@@ -289,7 +318,10 @@ def main() -> None:
     input_settings, output_settings = (
         extra_settings if extra_settings is not None else (None, None)
     )
-    recording = np.zeros((len(stimulus), input_channels), dtype=np.float32)
+    recording_samples = int(
+        round(len(stimulus) * input_sample_rate / output_sample_rate)
+    )
+    recording = np.zeros((recording_samples, input_channels), dtype=np.float32)
     input_cursor = 0
     output_cursor = 0
     stream_status: list[str] = []
@@ -320,7 +352,7 @@ def main() -> None:
     input_finished = threading.Event()
     output_finished = threading.Event()
     input_stream = sd.InputStream(
-        samplerate=args.sample_rate,
+        samplerate=input_sample_rate,
         channels=input_channels,
         dtype="float32",
         device=input_index,
@@ -330,7 +362,7 @@ def main() -> None:
         finished_callback=input_finished.set,
     )
     output_stream = sd.OutputStream(
-        samplerate=args.sample_rate,
+        samplerate=output_sample_rate,
         channels=2,
         dtype="float32",
         device=output_index,
@@ -339,7 +371,7 @@ def main() -> None:
         callback=output_callback,
         finished_callback=output_finished.set,
     )
-    timeout = len(stimulus) / args.sample_rate + 5.0
+    timeout = len(stimulus) / output_sample_rate + 5.0
     try:
         input_stream.start()
         output_stream.start()
@@ -354,10 +386,10 @@ def main() -> None:
         output_stream.close(ignore_errors=True)
     if stream_status:
         raise RuntimeError("音频流异常：" + "; ".join(stream_status))
-    wavfile.write(recording_path, args.sample_rate, recording.astype(np.float32))
+    wavfile.write(recording_path, input_sample_rate, recording.astype(np.float32))
 
-    analysis_start = max(0, active_start - args.sample_rate // 2)
-    analysis_end = min(len(recording), active_end + args.sample_rate // 2)
+    analysis_start = max(0, active_start - input_sample_rate // 2)
+    analysis_end = min(len(recording), active_end + input_sample_rate // 2)
     active = recording[analysis_start:analysis_end]
     rms = np.sqrt(np.mean(np.square(active.astype(np.float64)), axis=0))
     peak = np.max(np.abs(active), axis=0)
@@ -370,7 +402,10 @@ def main() -> None:
         "platform": platform.platform(),
         "python": sys.version,
         "label": args.label,
-        "sample_rate": args.sample_rate,
+        "sample_rate": input_sample_rate,
+        "input_sample_rate": input_sample_rate,
+        "output_sample_rate": output_sample_rate,
+        "output_channel": args.output_channel,
         "signal_type": args.signal,
         "start_hz": args.start_hz,
         "end_hz": args.end_hz,
@@ -396,19 +431,28 @@ def main() -> None:
         "channel_clipped_samples": [int(value) for value in clipping],
     }
     if args.signal == "log-sweep":
+        sweep_starts = [
+            output_to_input_sample(value) for value in output_sweep_starts
+        ]
+        sweep_samples = output_to_input_sample(output_sweep_samples)
         metadata.update(
             {
                 "sweep_seconds": args.sweep_seconds,
                 "sweep_starts": sweep_starts,
                 "sweep_samples": sweep_samples,
+                "output_sweep_starts": output_sweep_starts,
+                "output_sweep_samples": output_sweep_samples,
                 "repetitions": args.repetitions,
             }
         )
     else:
+        period_samples = output_to_input_sample(output_period_samples)
         metadata.update(
             {
                 "active_start_sample": active_start,
                 "period_samples": period_samples,
+                "output_active_start_sample": output_active_start,
+                "output_period_samples": output_period_samples,
                 "periods": args.periods,
                 "settle_periods": args.settle_periods,
                 "noise_seed": args.noise_seed,

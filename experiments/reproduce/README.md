@@ -80,15 +80,21 @@ powershell -ExecutionPolicy Bypass -File `
   -OutputDir experiments\measurements\zx300a-usb-dac-clock-calibration `
   -LevelDbfs -32 -Periods 16
 
-# 176.4/192 kHz 系数：USB DAC 模式的最终定量验证。
+# 48 kHz 基础档：验证 192 kHz tone 时钟和五段级联。
 powershell -ExecutionPolicy Bypass -File `
   .\experiments\reproduce\42_zx300a_usb_dac_4x_clock_corrected.ps1 `
   -OutputDir experiments\measurements\zx300a-usb-dac-4x-clock-corrected `
   -LevelDbfs -32 -Periods 16
+
+# 八档输入：验证固定 176.4/192 kHz family 时钟、活动 half 和左右声道映射。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\45_measure_zx300a_all_sample_rates.ps1 `
+  -OutputDir experiments\measurements\zx300a-usb-dac-all-sample-rates
 ```
 
-三个脚本默认使用 `E:\Downloads\platform-tools\adb.exe`。每次实验都会先保存当前
-table body，生成带 Sony 校验和的恢复表，并在测量结束后恢复。完整结论见
+脚本默认使用 `E:\Downloads\platform-tools\adb.exe`。`40` 至 `42` 会备份并恢复
+测量前的 table；`45` 在 `finally` 中重新应用设备上的持久化 `auto_tct.tbl`。
+完整结论见
 [`docs/zx300a-usb-dac-loopback-validation.zh.md`](../../docs/zx300a-usb-dac-loopback-validation.zh.md)。
 
 ### Etymotic EVO 2-flange：生成并持久化安装
@@ -106,4 +112,9 @@ powershell -ExecutionPolicy Bypass -File `
 # 安装后进行原厂/EVO 周期宽带回环，并在结束时重新应用 EVO。
 powershell -ExecutionPolicy Bypass -File `
   .\experiments\reproduce\44_measure_etymotic_evo_2flange_loopback.ps1
+
+# 枚举 44.1 kHz 至 384 kHz 全部 USB DAC PCM 档位，反推固定 DSP Fs、
+# 当前采集通路读取的 half，并确认单声道录音线接到左输出。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\45_measure_zx300a_all_sample_rates.ps1
 ```

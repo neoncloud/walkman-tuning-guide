@@ -91,18 +91,21 @@ python3 tools/autoeq_to_cxd3778gf_table.py samples/sample-autoeq.txt out/custom.
 ```
 
 > [!IMPORTANT]
-> ZX300A 的 48 kHz USB DAC 回环实测表明，CXD3778GF tone IIR 以音频采样率的
-> 4 倍运行。生成器现在默认按 `176.4 kHz` 和 `192 kHz` 分别计算两个 half，
-> 而不是旧版的 `44.1 kHz` 和 `48 kHz`。旧算法会把 1 kHz 滤波器移动到约
-> 4 kHz。其他硬件通路尚未全部测量；如需复现实验或覆盖默认值，可显式传入
-> `--fs441` 和 `--fs48`。
+> ZX300A USB DAC 的八档回环表明，tone IIR 并非始终按输入采样率的 4 倍运行。
+> 44.1 kHz 家族固定在约 `176.4 kHz`，48 kHz 家族固定在约 `192 kHz`；
+> 相对输入的倍率依次约为 4×、2×、1×、0.5×。因此生成器默认的
+> `176.4/192 kHz` 系数时钟仍然正确，但“4×”只适用于 44.1/48 kHz 基础档。
+> 当前 ZX300A 强制加载通路的左声道在八档输入下均匹配 table 的 half 0，
+> 未按源码命名自动切换到 half 1；这个 area 选择问题仍需进一步验证。
 >
-> ZX300A 48 kHz USB DAC loopback measurements show that the CXD3778GF tone
-> IIR runs at 4x the audio sample rate. The generator now defaults to
-> `176.4 kHz` and `192 kHz` for the two halves instead of the legacy
-> `44.1 kHz` and `48 kHz`. The legacy calculation moves a requested 1 kHz
-> filter to about 4 kHz. Other hardware paths have not all been measured;
-> use `--fs441` and `--fs48` to override the defaults when needed.
+> Eight-rate ZX300A USB DAC loopback measurements show that the tone IIR is
+> not always 4x the input rate. The 44.1 kHz family stays near `176.4 kHz`
+> and the 48 kHz family stays near `192 kHz`, giving approximate ratios of
+> 4x, 2x, 1x, and 0.5x. The generator's `176.4/192 kHz` defaults remain
+> correct, but 4x applies only to the 44.1/48 kHz base rates. On the current
+> forced-apply path, the captured ZX300A left output matched half 0 at all
+> eight rates instead of switching to half 1 as the source names imply;
+> this RAM-area selection remains under investigation.
 
 生成器还会按新的 tone-DSP 时钟重新检查 20 Hz 至 20 kHz 的总峰值；如果 AutoEq
 原始 preamp 不再足够，会只增加必要的全局衰减，保持相对频响不变。可用

@@ -1,0 +1,405 @@
+{
+  "frequency_range_for_metrics_hz": [
+    30.0,
+    18000.0
+  ],
+  "rates": [
+    {
+      "input_sample_rate_hz": 44100,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 176400.0,
+      "fitted_tone_dsp_sample_rate_hz": 176438.378011439,
+      "fitted_multiplier": 4.000870249692494,
+      "clock_error_percent": 0.021756242312354068,
+      "common_probe_shape_span_db": 11.963534743614675,
+      "common_probe_rmse_at_expected_clock_db": 0.0247924875830817,
+      "common_probe_rmse_at_fitted_clock_db": 0.024792726395849014,
+      "common_probe_correlation": 0.9999760879380264,
+      "common_probe_global_offset_removed_db": 0.009888752646940176,
+      "common_probe_peak_frequency_hz": 3686.923027069672,
+      "common_probe_peak_db": 12.033160351556315,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.025403244485548017,
+      "half1_rmse_db": 4.8900865314048385,
+      "half0_correlation": 0.9999705568079368,
+      "half1_correlation": 0.08523496590357647,
+      "captured_path_half_rmse_db": 0.025403244485548017
+    },
+    {
+      "input_sample_rate_hz": 48000,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 192000.0,
+      "fitted_tone_dsp_sample_rate_hz": 191960.2511394746,
+      "fitted_multiplier": 3.999171898739054,
+      "clock_error_percent": -0.02070253152365309,
+      "common_probe_shape_span_db": 11.980415915171404,
+      "common_probe_rmse_at_expected_clock_db": 0.03478715815805284,
+      "common_probe_rmse_at_fitted_clock_db": 0.03477481194017611,
+      "common_probe_correlation": 0.9999465715603795,
+      "common_probe_global_offset_removed_db": 0.005508887827939827,
+      "common_probe_peak_frequency_hz": 3991.2624571577376,
+      "common_probe_peak_db": 12.025611373496606,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.031027597899606893,
+      "half1_rmse_db": 4.875981640343546,
+      "half0_correlation": 0.9999560129262526,
+      "half1_correlation": 0.08401272495519589,
+      "captured_path_half_rmse_db": 0.031027597899606893
+    },
+    {
+      "input_sample_rate_hz": 88200,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 176400.0,
+      "fitted_tone_dsp_sample_rate_hz": 174678.3236191721,
+      "fitted_multiplier": 1.9804798596278015,
+      "clock_error_percent": -0.9760070186099257,
+      "common_probe_shape_span_db": 11.608935600490954,
+      "common_probe_rmse_at_expected_clock_db": 0.22484606733013432,
+      "common_probe_rmse_at_fitted_clock_db": 0.2128878552924706,
+      "common_probe_correlation": 0.998710712869532,
+      "common_probe_global_offset_removed_db": -0.05094893444830145,
+      "common_probe_peak_frequency_hz": 3771.42822423121,
+      "common_probe_peak_db": 11.813614024306181,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.022097355211651983,
+      "half1_rmse_db": 4.881726183072837,
+      "half0_correlation": 0.9999779133687825,
+      "half1_correlation": 0.08539526608822391,
+      "captured_path_half_rmse_db": 0.022097355211651983
+    },
+    {
+      "input_sample_rate_hz": 96000,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 192000.0,
+      "fitted_tone_dsp_sample_rate_hz": 191920.0593260524,
+      "fitted_multiplier": 1.9991672846463793,
+      "clock_error_percent": -0.041635767681036384,
+      "common_probe_shape_span_db": 11.967674294671399,
+      "common_probe_rmse_at_expected_clock_db": 0.035537615220325766,
+      "common_probe_rmse_at_fitted_clock_db": 0.03545152002844669,
+      "common_probe_correlation": 0.999944179538499,
+      "common_probe_global_offset_removed_db": 0.0015255040273176356,
+      "common_probe_peak_frequency_hz": 3991.2624571577376,
+      "common_probe_peak_db": 12.042912121504411,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.04285271876596023,
+      "half1_rmse_db": 4.8858597689880545,
+      "half0_correlation": 0.9999195906370668,
+      "half1_correlation": 0.08623019083175669,
+      "captured_path_half_rmse_db": 0.04285271876596023
+    },
+    {
+      "input_sample_rate_hz": 176400,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 176400.0,
+      "fitted_tone_dsp_sample_rate_hz": 176313.29029347075,
+      "fitted_multiplier": 0.9995084483756845,
+      "clock_error_percent": -0.04915516243154672,
+      "common_probe_shape_span_db": 11.953777480187032,
+      "common_probe_rmse_at_expected_clock_db": 0.024165621293686428,
+      "common_probe_rmse_at_fitted_clock_db": 0.023979993121421926,
+      "common_probe_correlation": 0.9999751833431442,
+      "common_probe_global_offset_removed_db": 0.004995123076271639,
+      "common_probe_peak_frequency_hz": 3686.923027069672,
+      "common_probe_peak_db": 12.005254635540497,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.023607159744024078,
+      "half1_rmse_db": 4.892792179952913,
+      "half0_correlation": 0.9999745467276993,
+      "half1_correlation": 0.08614671113932569,
+      "captured_path_half_rmse_db": 0.023607159744024078
+    },
+    {
+      "input_sample_rate_hz": 192000,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 192000.0,
+      "fitted_tone_dsp_sample_rate_hz": 192724.69047356863,
+      "fitted_multiplier": 1.0037744295498365,
+      "clock_error_percent": 0.3774429549836533,
+      "common_probe_shape_span_db": 11.701933435163145,
+      "common_probe_rmse_at_expected_clock_db": 0.17724462506251257,
+      "common_probe_rmse_at_fitted_clock_db": 0.1757563801133613,
+      "common_probe_correlation": 0.9991972324088424,
+      "common_probe_global_offset_removed_db": -0.04664419238764775,
+      "common_probe_peak_frequency_hz": 3946.2936530450393,
+      "common_probe_peak_db": 11.80849526571829,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.03286402856464706,
+      "half1_rmse_db": 4.885777033397912,
+      "half0_correlation": 0.999950914632991,
+      "half1_correlation": 0.08540083658540794,
+      "captured_path_half_rmse_db": 0.03286402856464706
+    },
+    {
+      "input_sample_rate_hz": 352800,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 176400.0,
+      "fitted_tone_dsp_sample_rate_hz": 176424.01588782656,
+      "fitted_multiplier": 0.5000680722444064,
+      "clock_error_percent": 0.013614448881282826,
+      "common_probe_shape_span_db": 12.00736110112631,
+      "common_probe_rmse_at_expected_clock_db": 0.025985321958210243,
+      "common_probe_rmse_at_fitted_clock_db": 0.02597634795458506,
+      "common_probe_correlation": 0.9999749453632335,
+      "common_probe_global_offset_removed_db": 0.008207048332894318,
+      "common_probe_peak_frequency_hz": 3686.923027069672,
+      "common_probe_peak_db": 12.050762176975054,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.02542703403931863,
+      "half1_rmse_db": 4.889956536341998,
+      "half0_correlation": 0.9999704639217167,
+      "half1_correlation": 0.08369767605159227,
+      "captured_path_half_rmse_db": 0.02542703403931863
+    },
+    {
+      "input_sample_rate_hz": 384000,
+      "effect_active": true,
+      "expected_tone_dsp_sample_rate_hz": 192000.0,
+      "fitted_tone_dsp_sample_rate_hz": 192125.88095615373,
+      "fitted_multiplier": 0.5003278149899837,
+      "clock_error_percent": 0.0655629979967376,
+      "common_probe_shape_span_db": 11.953284296345542,
+      "common_probe_rmse_at_expected_clock_db": 0.03133326000714911,
+      "common_probe_rmse_at_fitted_clock_db": 0.031076620472934604,
+      "common_probe_correlation": 0.999959651057938,
+      "common_probe_global_offset_removed_db": 0.0019085954924647312,
+      "common_probe_peak_frequency_hz": 4036.7436897719913,
+      "common_probe_peak_db": 12.056930903370164,
+      "captured_path_half_match": 0,
+      "half0_rmse_db": 0.38059537651144437,
+      "half1_rmse_db": 4.825007465336731,
+      "half0_correlation": 0.9955309941638036,
+      "half1_correlation": 0.15719636077757704,
+      "captured_path_half_rmse_db": 0.38059537651144437
+    }
+  ],
+  "channel_map": {
+    "rms_dbfs": {
+      "left_identity": -30.86475867334375,
+      "right_identity": -70.8529531549484,
+      "left_bank_probe": -26.85234508947896,
+      "right_bank_probe": -70.88162722598331
+    },
+    "identity_left_minus_right_db": 39.988194481604644,
+    "bank_probe_left_minus_right_db": 44.02928213650435,
+    "captured_walkman_output_channel": "left"
+  },
+  "alignment": {
+    "44100_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137368,
+        "latency_ms": 861.8333333333334,
+        "normalized_correlation": 0.7690897516846485,
+        "periods_used": 6
+      }
+    ],
+    "44100_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 136792,
+        "latency_ms": 849.8333333333334,
+        "normalized_correlation": 0.6617428139448861,
+        "periods_used": 6
+      }
+    ],
+    "44100_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 136472,
+        "latency_ms": 843.1666666666666,
+        "normalized_correlation": 0.7546169334829048,
+        "periods_used": 6
+      }
+    ],
+    "48000_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 141896,
+        "latency_ms": 956.1666666666666,
+        "normalized_correlation": 0.8822065784264128,
+        "periods_used": 6
+      }
+    ],
+    "48000_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137816,
+        "latency_ms": 871.1666666666666,
+        "normalized_correlation": 0.41386448549392707,
+        "periods_used": 6
+      }
+    ],
+    "48000_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137272,
+        "latency_ms": 859.8333333333334,
+        "normalized_correlation": 0.6829412843340331,
+        "periods_used": 6
+      }
+    ],
+    "88200_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 136816,
+        "latency_ms": 850.3333333333334,
+        "normalized_correlation": 0.577897981177847,
+        "periods_used": 6
+      }
+    ],
+    "88200_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 135096,
+        "latency_ms": 814.5,
+        "normalized_correlation": 0.3734752844356521,
+        "periods_used": 6
+      }
+    ],
+    "88200_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 132744,
+        "latency_ms": 765.5,
+        "normalized_correlation": 0.750005736982847,
+        "periods_used": 6
+      }
+    ],
+    "96000_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137712,
+        "latency_ms": 869.0,
+        "normalized_correlation": 0.6435747224065165,
+        "periods_used": 6
+      }
+    ],
+    "96000_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 133544,
+        "latency_ms": 782.1666666666666,
+        "normalized_correlation": 0.4615536146796273,
+        "periods_used": 6
+      }
+    ],
+    "96000_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 135720,
+        "latency_ms": 827.5,
+        "normalized_correlation": 0.65352170126512,
+        "periods_used": 6
+      }
+    ],
+    "176400_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 139408,
+        "latency_ms": 904.3333333333334,
+        "normalized_correlation": 0.5949884112226959,
+        "periods_used": 6
+      }
+    ],
+    "176400_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 135472,
+        "latency_ms": 822.3333333333334,
+        "normalized_correlation": 0.446199770715696,
+        "periods_used": 6
+      }
+    ],
+    "176400_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 135584,
+        "latency_ms": 824.6666666666666,
+        "normalized_correlation": 0.6058745926296624,
+        "periods_used": 6
+      }
+    ],
+    "192000_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 141144,
+        "latency_ms": 940.5,
+        "normalized_correlation": 0.6861623570339869,
+        "periods_used": 6
+      }
+    ],
+    "192000_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 135560,
+        "latency_ms": 824.1666666666666,
+        "normalized_correlation": 0.45026427188718937,
+        "periods_used": 6
+      }
+    ],
+    "192000_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 135600,
+        "latency_ms": 825.0,
+        "normalized_correlation": 0.5382474707751123,
+        "periods_used": 6
+      }
+    ],
+    "352800_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 142088,
+        "latency_ms": 960.1666666666666,
+        "normalized_correlation": 0.5798855826581385,
+        "periods_used": 6
+      }
+    ],
+    "352800_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 138360,
+        "latency_ms": 882.5,
+        "normalized_correlation": 0.7651658179534487,
+        "periods_used": 6
+      }
+    ],
+    "352800_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 140824,
+        "latency_ms": 933.8333333333334,
+        "normalized_correlation": 0.5444413806959101,
+        "periods_used": 6
+      }
+    ],
+    "384000_identity": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 141880,
+        "latency_ms": 955.8333333333334,
+        "normalized_correlation": 0.7901687905117615,
+        "periods_used": 6
+      }
+    ],
+    "384000_common": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137816,
+        "latency_ms": 871.1666666666666,
+        "normalized_correlation": 0.44110749020842216,
+        "periods_used": 6
+      }
+    ],
+    "384000_banks": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 139752,
+        "latency_ms": 911.5,
+        "normalized_correlation": 0.6477854295854458,
+        "periods_used": 6
+      }
+    ]
+  }
+}

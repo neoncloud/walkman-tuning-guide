@@ -87,12 +87,19 @@ After normalization, the codec order is:
 b0, b1, b2, -a1, -a2
 ```
 
-同一组逻辑滤波器会写入 chunk 的两个 half。两个 half 分别服务于 44.1 kHz
-和 48 kHz 音频族，但这里必须区分**音频输入采样率**与**tone IIR 的实际运行时钟**。
+同一组逻辑滤波器会写入 chunk 的两个 half。内核源码把地址 `0x00` 和 `0x20`
+分别命名为 `CODEC_RAM_441_AREA` 与 `CODEC_RAM_480_AREA`；Sony 原厂特殊耳机表
+的两半也分别按 176.4/192 kHz 解释时得到几乎相同的频响。因此生成器仍按
+44.1/48 kHz 音频族生成两套系数，但必须区分**音频输入采样率**、
+**tone IIR 的实际运行时钟**和**当前硬件实际读取的 RAM area**。
 
-The same logical filter set is written into both halves of the chunk. The halves
-serve the 44.1 kHz and 48 kHz audio families, but the **input audio rate** must
-be distinguished from the **actual tone-IIR processing clock**.
+The same logical filter set is written into both halves of the chunk. The
+kernel source names addresses `0x00` and `0x20` as `CODEC_RAM_441_AREA` and
+`CODEC_RAM_480_AREA`. The two halves of Sony's special-headphone tables also
+produce almost identical responses when interpreted at 176.4 and 192 kHz.
+The generator therefore still emits coefficient sets for the 44.1/48 kHz
+families, but the **input rate**, **actual tone-IIR clock**, and **RAM area
+actually read by the current path** must be kept separate.
 
 ZX300A USB DAC 的定量回环结果为：
 
@@ -106,27 +113,44 @@ Quantitative ZX300A USB DAC loopback results show:
 旧算法直接按 44.1/48 kHz 计算 RBJ 系数。在 48 kHz USB 输入下，设定为
 1 kHz 的峰值实测出现在约 4.025 kHz，设定为 4 kHz 的陷波出现在约
 15.9 kHz；使用 192 kHz 重新计算后，中心分别回到 1 kHz 和 4 kHz。
-因此当前生成器默认使用 4 倍时钟：
+随后对八档 USB PCM 输入完成了物理回环：
 
 The legacy algorithm calculated RBJ coefficients directly at 44.1/48 kHz.
 With 48 kHz USB input, a requested 1 kHz peak appeared at about 4.025 kHz,
 and a requested 4 kHz notch appeared at about 15.9 kHz. Recalculating at
-192 kHz moved the centers back to 1 kHz and 4 kHz. The generator therefore
-uses the 4x clocks by default:
+192 kHz moved the centers back to 1 kHz and 4 kHz. Physical loopback was
+then repeated across all eight USB PCM rates:
+
+| USB 输入家族 / Input family | 输入档位 / Input rates | 实测 tone-DSP 时钟 / Measured tone-DSP clock |
+|---|---|---:|
+| 44.1 kHz | 44.1 / 88.2 / 176.4 / 352.8 kHz | 约 176.4 kHz |
+| 48 kHz | 48 / 96 / 192 / 384 kHz | 约 192 kHz |
+
+因此正确模型是“每个音频族使用固定 tone 时钟”，而不是“永远等于输入采样率
+的四倍”。相对输入的倍率依次约为 4×、2×、1×、0.5×。生成器默认值写成：
+
+The correct model is therefore a fixed tone clock per audio family, not
+"always four times the input rate." Relative to the input, the ratios are
+approximately 4x, 2x, 1x, and 0.5x. The generator defaults are:
 
 ```text
-tone_fs_44k1_family = 44100 * 4 = 176400 Hz
-tone_fs_48k_family  = 48000 * 4 = 192000 Hz
+tone_fs_44k1_family = 176400 Hz
+tone_fs_48k_family  = 192000 Hz
 ```
 
 `--fs441` 和 `--fs48` 仍可覆盖默认值，用于其他型号或尚未测量的播放通路。
-目前 4 倍关系的直接定量证据来自 ZX300A USB DAC 48 kHz 通路；其他通路应在
-有测量条件时继续验证。
+八档测试还发现，当前 ZX300A `TYPE_Z` 强制加载通路的左声道始终匹配 half 0，
+包括 48 kHz 家族；这与源码的 family area 命名不一致。若只针对当前 USB DAC
+48 kHz 通路做实验，可显式使用 `--fs441 192000 --fs48 192000`，让两半都按
+192 kHz 生成；这张表不应再用于要求 44.1 kHz 精确中心频率的通路。
 
 `--fs441` and `--fs48` can still override the defaults for other models or
-unmeasured playback paths. Direct quantitative evidence for the 4x relation
-currently comes from the ZX300A USB DAC 48 kHz path; other paths should be
-measured when suitable hardware is available.
+unmeasured playback paths. The eight-rate test also found that the captured
+left output on the current ZX300A `TYPE_Z` forced-apply path always matched
+half 0, including the 48 kHz family. This conflicts with the source's family
+area names. For a USB-DAC-only 48 kHz experiment, explicitly using
+`--fs441 192000 --fs48 192000` makes both halves correct for that path, but
+the resulting table must not be treated as exact for 44.1 kHz playback.
 
 完整报告见
 [`zx300a-usb-dac-loopback-validation.zh.md`](zx300a-usb-dac-loopback-validation.zh.md)。

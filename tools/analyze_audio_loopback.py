@@ -14,7 +14,7 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 from scipy.io import wavfile
-from scipy.signal import correlate, correlation_lags, hilbert
+from scipy.signal import correlate, correlation_lags, hilbert, resample_poly
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -97,11 +97,19 @@ def read_capture(label: str, wav_path: Path) -> Capture:
 def read_stimulus(capture: Capture) -> np.ndarray:
     stimulus_path = capture.wav_path.parent / capture.metadata["stimulus_path"]
     sample_rate, stimulus = wavfile.read(stimulus_path)
-    if sample_rate != capture.sample_rate:
-        raise ValueError(f"{stimulus_path}: 采样率与录音不一致")
     if stimulus.ndim == 2:
-        stimulus = stimulus[:, 0]
-    return stimulus.astype(np.float64)
+        # 单声道探针可能只播放左或右；选择实际有能量的一侧作为对齐参考。
+        channel_energy = np.sum(np.square(stimulus.astype(np.float64)), axis=0)
+        stimulus = stimulus[:, int(np.argmax(channel_energy))]
+    stimulus = stimulus.astype(np.float64)
+    if sample_rate != capture.sample_rate:
+        divisor = math.gcd(int(sample_rate), int(capture.sample_rate))
+        stimulus = resample_poly(
+            stimulus,
+            capture.sample_rate // divisor,
+            int(sample_rate) // divisor,
+        )
+    return stimulus
 
 
 def aligned_sweeps(capture: Capture, stimulus: np.ndarray) -> tuple[list[np.ndarray], list[dict]]:
