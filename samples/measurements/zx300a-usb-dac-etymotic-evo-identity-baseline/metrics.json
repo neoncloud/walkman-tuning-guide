@@ -1,0 +1,62 @@
+{
+  "frequency_range_for_metrics_hz": [
+    30.0,
+    18000.0
+  ],
+  "capture_sample_rate_hz": 48000,
+  "dsp_sample_rate_hz": 192000,
+  "baseline_repeatability_rmse_db": 0.01788428304775389,
+  "stock_restore_rmse_db": 0.017754410375311763,
+  "profiles": {
+    "etymotic_evo_2flange": {
+      "global_level_offset_removed_db": -0.04615227792462839,
+      "rmse_30_18000_db": 0.3169026554199881,
+      "mae_30_18000_db": 0.25380531160942105,
+      "max_abs_error_30_18000_db": 0.7820194557463775,
+      "rmse_1000_6000_db": 0.4079219766658388,
+      "correlation_30_18000": 0.9955357364103536,
+      "focus_frequency_hz": 1732.1354838897657,
+      "expected_at_focus_db": -12.997242398326064,
+      "measured_at_focus_db": -12.786976942440885,
+      "error_at_focus_db": 0.2102654558851782
+    }
+  },
+  "alignment": {
+    "identity_before_1": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137816,
+        "latency_ms": 871.1666666666666,
+        "normalized_correlation": 0.6026313401179909,
+        "periods_used": 14
+      }
+    ],
+    "identity_before_2": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137512,
+        "latency_ms": 864.8333333333334,
+        "normalized_correlation": 0.5621856116944419,
+        "periods_used": 14
+      }
+    ],
+    "etymotic_evo_2flange": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 136568,
+        "latency_ms": 845.1666666666666,
+        "normalized_correlation": 0.4215381408259028,
+        "periods_used": 14
+      }
+    ],
+    "identity_after_evo": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 139792,
+        "latency_ms": 912.3333333333334,
+        "normalized_correlation": 0.5319366270543238,
+        "periods_used": 14
+      }
+    ]
+  }
+}

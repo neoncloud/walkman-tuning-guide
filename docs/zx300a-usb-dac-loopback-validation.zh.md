@@ -156,3 +156,32 @@ last_result=0
 ```
 
 恢复后的频响与测试前原厂基线 RMSE 为 `0.0175 dB`，可视为已经恢复到测量前状态。
+
+## 9. 五段 Etymotic EVO 复合滤波回测
+
+算法修正后，使用 Etymotic EVO（2-flange eartips）的完整五段 AutoEq 参数做了
+第二组独立回环。为了避免依赖 Sony 原厂文件，基线使用工具现场生成的五段
+identity 完整表；这与 ZX300A stock `sg` chunk 的滤波响应等价。
+
+| 指标 | 结果 |
+|---|---:|
+| 30 Hz-18 kHz RMSE | 0.317 dB |
+| 1-6 kHz RMSE | 0.408 dB |
+| 30 Hz-18 kHz MAE | 0.254 dB |
+| 最大绝对误差 | 0.782 dB |
+| 理论/实测相关系数 | 0.9955 |
+| 两次 identity 基线重复性 | 0.0179 dB |
+| identity 恢复差异 | 0.0178 dB |
+
+这次测试同时覆盖 LSC、三个 PK/HSC 组合、`-10.643 dB` 自动安全 preamp、
+Q37 段间增益分配和五段同时级联。它说明修正后的算法不只适用于单个测试峰值，
+也能准确实现真实 AutoEq 复合曲线。
+
+![Etymotic EVO 五段回环结果](../samples/measurements/zx300a-usb-dac-etymotic-evo-identity-baseline/frequency_response.png)
+
+复现脚本：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\44_measure_etymotic_evo_2flange_loopback.ps1
+```

@@ -388,14 +388,14 @@ def render_plot(
     ax_repeat, ax_restore = axes[-1]
     ax_repeat.semilogx(frequencies, repeatability, color="tab:purple", linewidth=1.4)
     ax_repeat.axhline(0.0, color="0.55", linewidth=0.8)
-    ax_repeat.set_title("两次原厂基线的重复性")
+    ax_repeat.set_title("两次基线的重复性")
     ax_repeat.set_ylabel("第 2 次 - 第 1 次 / dB")
     ax_repeat.grid(True, which="both", alpha=0.25)
 
     if restore_delta is not None:
         ax_restore.semilogx(frequencies, restore_delta, color="tab:green", linewidth=1.4)
         ax_restore.axhline(0.0, color="0.55", linewidth=0.8)
-        ax_restore.set_title("恢复原厂后的差异")
+        ax_restore.set_title("恢复基线后的差异")
         ax_restore.set_ylabel("恢复后 - 恢复前 / dB")
         ax_restore.grid(True, which="both", alpha=0.25)
     else:
@@ -577,11 +577,11 @@ def main() -> None:
     report_lines.extend(
         [
             "",
-            f"- 两次原厂基线的形状重复性 RMSE：{repeatability_rmse:.3f} dB。",
+            f"- 两次基线的形状重复性 RMSE：{repeatability_rmse:.3f} dB。",
             (
-                f"- 恢复原厂后相对恢复前的 RMSE：{restore_rmse:.3f} dB。"
+                f"- 恢复基线后相对恢复前的 RMSE：{restore_rmse:.3f} dB。"
                 if restore_rmse is not None
-                else "- 本次未提供恢复原厂后的复测。"
+                else "- 本次未提供恢复基线后的复测。"
             ),
             "- 对每个自定义配置仅移除了一个全频段常量电平偏差；曲线形状没有做拟合或缩放。",
             "- 详细数据见 `frequency_response.csv`，自动对齐诊断见 `metrics.json`。",

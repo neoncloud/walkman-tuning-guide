@@ -102,4 +102,8 @@ cd D:\Documents\zx300-custom-kernel\walkman-tuning-guide
 powershell -ExecutionPolicy Bypass -File `
   .\experiments\reproduce\43_install_etymotic_evo_2flange_zx300a.ps1 `
   -Input "E:\Downloads\Etymotic Evo (2-flange eartips) ParametricEq.txt"
+
+# 安装后进行原厂/EVO 周期宽带回环，并在结束时重新应用 EVO。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\44_measure_etymotic_evo_2flange_loopback.ps1
 ```

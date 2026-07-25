@@ -364,6 +364,16 @@ For details, see [docs/algorithm.zh-en.md](docs/algorithm.zh-en.md).
 See [docs/zx300a-usb-dac-loopback-validation.zh.md](docs/zx300a-usb-dac-loopback-validation.zh.md)
 for the quantitative measurements, error data, and full reproduction procedure.
 
+五段 Etymotic EVO 复合滤波器也已通过真实回环：相对 identity 基线的
+30 Hz-18 kHz RMSE 为 `0.317 dB`，相关系数为 `0.9955`。数据和图表见
+[`samples/measurements/zx300a-usb-dac-etymotic-evo-identity-baseline`](samples/measurements/zx300a-usb-dac-etymotic-evo-identity-baseline)。
+
+The five-section Etymotic EVO profile was also verified by physical loopback:
+`0.317 dB` RMSE from 30 Hz to 18 kHz relative to an identity baseline, with
+`0.9955` correlation. See
+[`samples/measurements/zx300a-usb-dac-etymotic-evo-identity-baseline`](samples/measurements/zx300a-usb-dac-etymotic-evo-identity-baseline)
+for the data and plot.
+
 ## 项目背景与构建 / Background and Build Story
 
 这个项目的切入点来自三个方向：
