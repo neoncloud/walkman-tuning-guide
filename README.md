@@ -95,6 +95,8 @@ python3 tools/autoeq_to_cxd3778gf_table.py samples/sample-autoeq.txt out/custom.
 > 44.1 kHz 家族固定在约 `176.4 kHz`，48 kHz 家族固定在约 `192 kHz`；
 > 相对输入的倍率依次约为 4×、2×、1×、0.5×。因此生成器默认的
 > `176.4/192 kHz` 系数时钟仍然正确，但“4×”只适用于 44.1/48 kHz 基础档。
+> 在关闭 DSEE 和其他音效后重新测试，八档相对固定 family 时钟的最大误差为
+> `0.064%`，共同探针最大拟合 RMSE 为 `0.037 dB`。
 > 当前 ZX300A 强制加载通路的左声道在八档输入下均匹配 table 的 half 0，
 > 未按源码命名自动切换到 half 1；这个 area 选择问题仍需进一步验证。
 >
@@ -103,6 +105,8 @@ python3 tools/autoeq_to_cxd3778gf_table.py samples/sample-autoeq.txt out/custom.
 > and the 48 kHz family stays near `192 kHz`, giving approximate ratios of
 > 4x, 2x, 1x, and 0.5x. The generator's `176.4/192 kHz` defaults remain
 > correct, but 4x applies only to the 44.1/48 kHz base rates. On the current
+> DSEE-off retest, the maximum clock error across all eight rates was
+> `0.064%`, with a maximum common-probe RMSE of `0.037 dB`. On the current
 > forced-apply path, the captured ZX300A left output matched half 0 at all
 > eight rates instead of switching to half 1 as the source names imply;
 > this RAM-area selection remains under investigation.

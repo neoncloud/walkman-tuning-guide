@@ -4,7 +4,8 @@
     [string]$Python = "C:\Python312\python.exe",
     [double]$LevelDbfs = -36.0,
     [int]$Periods = 8,
-    [int[]]$Rates = @(44100, 48000, 88200, 96000, 176400, 192000, 352800, 384000)
+    [int[]]$Rates = @(44100, 48000, 88200, 96000, 176400, 192000, 352800, 384000),
+    [switch]$SkipChannelMap
 )
 
 # WALKMAN 以 8 档 WDM-KS 独占采样率播放，OsmoPocket3 始终以 48 kHz 录音。
@@ -133,14 +134,16 @@ try {
         Measure-Rate $Rate "bank_probe"
     }
 
-    Write-Host "===== 48 kHz 左右声道映射 ====="
-    Apply-RemoteTable $RemoteIdentity
-    Measure-ChannelMap "left" "identity"
-    Measure-ChannelMap "right" "identity"
+    if (-not $SkipChannelMap) {
+        Write-Host "===== 48 kHz 左右声道映射 ====="
+        Apply-RemoteTable $RemoteIdentity
+        Measure-ChannelMap "left" "identity"
+        Measure-ChannelMap "right" "identity"
 
-    Apply-RemoteTable $RemoteBanks
-    Measure-ChannelMap "left" "bank_probe"
-    Measure-ChannelMap "right" "bank_probe"
+        Apply-RemoteTable $RemoteBanks
+        Measure-ChannelMap "left" "bank_probe"
+        Measure-ChannelMap "right" "bank_probe"
+    }
 }
 finally {
     Apply-RemoteTable $RemoteRestore

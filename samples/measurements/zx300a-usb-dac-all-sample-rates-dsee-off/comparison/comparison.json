@@ -1,0 +1,239 @@
+{
+  "dsee_on_metrics": "samples/measurements/zx300a-usb-dac-all-sample-rates/metrics.json",
+  "dsee_off_metrics": "samples/measurements/zx300a-usb-dac-all-sample-rates-dsee-off/full/metrics.json",
+  "dsee_off_repeat_metrics": "samples/measurements/zx300a-usb-dac-all-sample-rates-dsee-off/outlier-repeat/metrics.json",
+  "rates": [
+    {
+      "input_sample_rate_hz": 44100,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 176438.378011439,
+        "clock_error_percent": 0.021756242312354068,
+        "common_probe_rmse_db": 0.024792726395849014,
+        "common_probe_correlation": 0.9999760879380264,
+        "common_probe_peak_frequency_hz": 3686.923027069672,
+        "common_probe_peak_db": 12.033160351556315,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.025403244485548017
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 176301.9677562404,
+        "clock_error_percent": -0.055573834330846505,
+        "common_probe_rmse_db": 0.028256370772645388,
+        "common_probe_correlation": 0.9999664121947689,
+        "common_probe_peak_frequency_hz": 3728.9362511121763,
+        "common_probe_peak_db": 12.027334020182012,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.026382881802168086
+      },
+      "dsee_off_source": "完整矩阵",
+      "fitted_clock_change_off_minus_on_hz": -136.41025519859977
+    },
+    {
+      "input_sample_rate_hz": 48000,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 191960.2511394746,
+        "clock_error_percent": -0.02070253152365309,
+        "common_probe_rmse_db": 0.03477481194017611,
+        "common_probe_correlation": 0.9999465715603795,
+        "common_probe_peak_frequency_hz": 3991.2624571577376,
+        "common_probe_peak_db": 12.025611373496606,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.031027597899606893
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 192031.46110675987,
+        "clock_error_percent": 0.016385993104095498,
+        "common_probe_rmse_db": 0.025017742356022672,
+        "common_probe_correlation": 0.9999737242270555,
+        "common_probe_peak_frequency_hz": 4036.7436897719913,
+        "common_probe_peak_db": 12.088489365642852,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.024149639746543126
+      },
+      "dsee_off_source": "定向复测",
+      "fitted_clock_change_off_minus_on_hz": 71.20996728527825
+    },
+    {
+      "input_sample_rate_hz": 88200,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 174678.3236191721,
+        "clock_error_percent": -0.9760070186099257,
+        "common_probe_rmse_db": 0.2128878552924706,
+        "common_probe_correlation": 0.998710712869532,
+        "common_probe_peak_frequency_hz": 3771.42822423121,
+        "common_probe_peak_db": 11.813614024306181,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.022097355211651983
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 176372.78527257795,
+        "clock_error_percent": -0.015427850012494915,
+        "common_probe_rmse_db": 0.02529992046839617,
+        "common_probe_correlation": 0.9999720742993649,
+        "common_probe_peak_frequency_hz": 3645.383158127813,
+        "common_probe_peak_db": 11.986580208143833,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.026143969996831107
+      },
+      "dsee_off_source": "完整矩阵",
+      "fitted_clock_change_off_minus_on_hz": 1694.4616534058587
+    },
+    {
+      "input_sample_rate_hz": 96000,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 191920.0593260524,
+        "clock_error_percent": -0.041635767681036384,
+        "common_probe_rmse_db": 0.03545152002844669,
+        "common_probe_correlation": 0.999944179538499,
+        "common_probe_peak_frequency_hz": 3991.2624571577376,
+        "common_probe_peak_db": 12.042912121504411,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.04285271876596023
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 191965.47634808483,
+        "clock_error_percent": -0.01798106870581906,
+        "common_probe_rmse_db": 0.03659366764428731,
+        "common_probe_correlation": 0.9999411969852199,
+        "common_probe_peak_frequency_hz": 3991.2624571577376,
+        "common_probe_peak_db": 12.034654434242224,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.04247351180011798
+      },
+      "dsee_off_source": "完整矩阵",
+      "fitted_clock_change_off_minus_on_hz": 45.417022032430395
+    },
+    {
+      "input_sample_rate_hz": 176400,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 176313.29029347075,
+        "clock_error_percent": -0.04915516243154672,
+        "common_probe_rmse_db": 0.023979993121421926,
+        "common_probe_correlation": 0.9999751833431442,
+        "common_probe_peak_frequency_hz": 3686.923027069672,
+        "common_probe_peak_db": 12.005254635540497,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.023607159744024078
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 176415.00766858543,
+        "clock_error_percent": 0.008507748631192413,
+        "common_probe_rmse_db": 0.026970761711521175,
+        "common_probe_correlation": 0.999967903808034,
+        "common_probe_peak_frequency_hz": 3645.383158127813,
+        "common_probe_peak_db": 12.042882827113504,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.02424430829826801
+      },
+      "dsee_off_source": "完整矩阵",
+      "fitted_clock_change_off_minus_on_hz": 101.71737511467654
+    },
+    {
+      "input_sample_rate_hz": 192000,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 192724.69047356863,
+        "clock_error_percent": 0.3774429549836533,
+        "common_probe_rmse_db": 0.1757563801133613,
+        "common_probe_correlation": 0.9991972324088424,
+        "common_probe_peak_frequency_hz": 3946.2936530450393,
+        "common_probe_peak_db": 11.80849526571829,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.03286402856464706
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 192027.01111116674,
+        "clock_error_percent": 0.014068287066004714,
+        "common_probe_rmse_db": 0.0355362369299376,
+        "common_probe_correlation": 0.9999479792162869,
+        "common_probe_peak_frequency_hz": 3991.2624571577376,
+        "common_probe_peak_db": 12.009635387837559,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.035812224187585055
+      },
+      "dsee_off_source": "完整矩阵",
+      "fitted_clock_change_off_minus_on_hz": -697.6793624018901
+    },
+    {
+      "input_sample_rate_hz": 352800,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 176424.01588782656,
+        "clock_error_percent": 0.013614448881282826,
+        "common_probe_rmse_db": 0.02597634795458506,
+        "common_probe_correlation": 0.9999749453632335,
+        "common_probe_peak_frequency_hz": 3686.923027069672,
+        "common_probe_peak_db": 12.050762176975054,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.02542703403931863
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 176400.0,
+        "fitted_tone_dsp_sample_rate_hz": 176339.45536178394,
+        "clock_error_percent": -0.03432235726533728,
+        "common_probe_rmse_db": 0.0221269292975462,
+        "common_probe_correlation": 0.9999798450682426,
+        "common_probe_peak_frequency_hz": 3645.383158127813,
+        "common_probe_peak_db": 12.009740688504255,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.018572664866572615
+      },
+      "dsee_off_source": "定向复测",
+      "fitted_clock_change_off_minus_on_hz": -84.56052604262368
+    },
+    {
+      "input_sample_rate_hz": 384000,
+      "dsee_on": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 192125.88095615373,
+        "clock_error_percent": 0.0655629979967376,
+        "common_probe_rmse_db": 0.031076620472934604,
+        "common_probe_correlation": 0.999959651057938,
+        "common_probe_peak_frequency_hz": 4036.7436897719913,
+        "common_probe_peak_db": 12.056930903370164,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.38059537651144437
+      },
+      "dsee_off": {
+        "tone_effect_active": true,
+        "expected_tone_dsp_sample_rate_hz": 192000.0,
+        "fitted_tone_dsp_sample_rate_hz": 192122.05417983315,
+        "clock_error_percent": 0.06356988532976171,
+        "common_probe_rmse_db": 0.030973518693016403,
+        "common_probe_correlation": 0.9999596583753383,
+        "common_probe_peak_frequency_hz": 4082.7431901128894,
+        "common_probe_peak_db": 12.027136927583282,
+        "captured_path_half_match": 0,
+        "captured_path_half_rmse_db": 0.03561568958086098
+      },
+      "dsee_off_source": "完整矩阵",
+      "fitted_clock_change_off_minus_on_hz": -3.826776320580393
+    }
+  ]
+}

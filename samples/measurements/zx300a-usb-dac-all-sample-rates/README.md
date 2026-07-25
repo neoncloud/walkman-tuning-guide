@@ -1,6 +1,10 @@
 # ZX300A USB DAC 全采样率回环数据
 
-本目录归档八档 USB PCM 输入的分析结果。原始 WAV 体积较大，不进入 Git；
+本目录归档第一轮八档 USB PCM 输入的分析结果。测试后确认这一轮开启了 DSEE，
+因此仅保留作对照，不再作为最终权威数据。DSEE 关闭后的修正版见
+`../zx300a-usb-dac-all-sample-rates-dsee-off/`。
+
+原始 WAV 体积较大，不进入 Git；
 可在 Windows 仓库根目录完整重建：
 
 ```powershell

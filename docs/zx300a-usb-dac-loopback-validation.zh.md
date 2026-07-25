@@ -17,6 +17,8 @@
   在约 **192 kHz**；“4 倍”只适用于 44.1/48 kHz 基础档；
 - 44.1、48、88.2、96、176.4、192、352.8、384 kHz 八档 USB PCM 输入均实测
   tone 生效，相对输入倍率依次约为 4×、2×、1×、0.5×；
+- 关闭 DSEE 和其他音效后重新完成八档矩阵，并对异常点复测；固定 family
+  时钟最大绝对误差为 `0.064%`，共同探针最大拟合 RMSE 为 `0.037 dB`；
 - 使用 192 kHz 生成系数后，1 kHz `+12 dB` 实测为 `+11.61 dB`，4 kHz
   `-12 dB` 实测为 `-11.59 dB`；
 - 单段滤波在 30 Hz 至 18 kHz 范围内的理论/实测 RMSE 均约为 `0.51 dB`，
@@ -32,7 +34,9 @@
 
 ![192 kHz 系数校正后的理论与实测频响](../samples/measurements/zx300a-usb-dac-4x-clock-corrected/frequency_response.png)
 
-![八档采样率矩阵](../samples/measurements/zx300a-usb-dac-all-sample-rates/sample_rate_matrix.png)
+![DSEE 关闭后的八档采样率矩阵](../samples/measurements/zx300a-usb-dac-all-sample-rates-dsee-off/full/sample_rate_matrix.png)
+
+![DSEE 开关两轮对比](../samples/measurements/zx300a-usb-dac-all-sample-rates-dsee-off/comparison/dsee_comparison.png)
 
 ## 2. 测试链路
 
@@ -60,11 +64,12 @@ tone table。音频设备访问全部在 Windows 完成，以避免 USB 设备�
 最初使用单频对数扫频时，OsmoPocket3 的自动增益/动态处理会跟随扫频电平变化。
 理论上的约 `12 dB` 峰谷在录音中只剩约 `1 dB`，因此单频扫频不能用于可靠的幅度定量。
 
-最终采用确定性周期宽带噪声：
+最终采用确定性周期宽带噪声。DSEE 关闭的完整矩阵每段使用 8 个周期，异常点
+定向复测使用 16 个周期：
 
 - 20 Hz 至 20 kHz 的全部频率同时存在；
 - 每个 table 使用完全相同的激励；
-- 丢弃前两个周期，保留 14 个稳定周期做同步平均；
+- 丢弃前两个周期，其余稳定周期做同步平均；
 - 以原厂 table 为参考计算复数频谱比；
 - 去除每次录音的单一全局电平偏移，仅比较相对频响。
 
@@ -84,20 +89,25 @@ tone table。音频设备访问全部在 Windows 完成，以避免 USB 设备�
 偏移并非随机误差：使用 192 kHz 重新解释同一组系数后，完整频响与实测高度吻合。
 因此可判定，在这条 48 kHz USB DAC 通路中，tone IIR 运行在 192 kHz。
 
-这一步只证明 **48 kHz 基础档**是 4×，不能外推所有采样率。随后对 Windows
-WDM-KS 可打开的八档采样率逐一回环，使用两个 half 完全相同的共同探针反推实际
-tone-DSP 时钟：
+这一步只证明 **48 kHz 基础档**是 4×，不能外推所有采样率。第一轮八档测试时
+DSEE 处于开启状态，因此在关闭 DSEE 和其他音效后，对 Windows WDM-KS 可打开
+的八档采样率重新逐一回环。共同探针在两个 half 中完全相同，可独立反推实际
+tone-DSP 时钟。
 
-| USB 输入 | 拟合 DSP Fs | 相对输入倍率 | 相对 family 固定时钟误差 | RMSE |
-|---:|---:|---:|---:|---:|
-| 44.1 kHz | 176438 Hz | 4.0009× | +0.022% | 0.025 dB |
-| 48 kHz | 191960 Hz | 3.9992× | -0.021% | 0.035 dB |
-| 88.2 kHz | 174678 Hz | 1.9805× | -0.976% | 0.213 dB |
-| 96 kHz | 191920 Hz | 1.9992× | -0.042% | 0.035 dB |
-| 176.4 kHz | 176313 Hz | 0.9995× | -0.049% | 0.024 dB |
-| 192 kHz | 192725 Hz | 1.0038× | +0.377% | 0.176 dB |
-| 352.8 kHz | 176424 Hz | 0.5001× | +0.014% | 0.026 dB |
-| 384 kHz | 192126 Hz | 0.5003× | +0.066% | 0.031 dB |
+DSEE 关闭的首轮完整矩阵中，48 与 352.8 kHz 各出现一次约 1% 的全曲线拟合
+异常，但探针中心仍在预期位置。使用 16 个周期定向复测后异常消失，说明它们是
+Osmo 动态处理或单次采集扰动。下表对这两档采用复测值：
+
+| USB 输入 | 拟合 DSP Fs | 相对输入倍率 | 相对 family 固定时钟误差 | RMSE | 数据来源 |
+|---:|---:|---:|---:|---:|:---:|
+| 44.1 kHz | 176302 Hz | 3.9978× | -0.056% | 0.028 dB | 完整矩阵 |
+| 48 kHz | 192031 Hz | 4.0007× | +0.016% | 0.025 dB | 16 周期复测 |
+| 88.2 kHz | 176373 Hz | 1.9997× | -0.015% | 0.025 dB | 完整矩阵 |
+| 96 kHz | 191965 Hz | 1.9996× | -0.018% | 0.037 dB | 完整矩阵 |
+| 176.4 kHz | 176415 Hz | 1.0001× | +0.009% | 0.027 dB | 完整矩阵 |
+| 192 kHz | 192027 Hz | 1.0001× | +0.014% | 0.036 dB | 完整矩阵 |
+| 352.8 kHz | 176339 Hz | 0.4998× | -0.034% | 0.022 dB | 16 周期复测 |
+| 384 kHz | 192122 Hz | 0.5003× | +0.064% | 0.031 dB | 完整矩阵 |
 
 正确模型因此是：
 
@@ -106,16 +116,23 @@ tone-DSP 时钟：
 48   / 96   / 192   / 384   kHz 输入 -> tone DSP 约 192.0 kHz
 ```
 
-88.2 与 192 kHz 两档拟合偏差较大，但曲线相关系数仍分别为 `0.9987` 和
-`0.9992`；固定 family 时钟模型仍明显优于随输入线性增加的 4×模型。352.8/384 kHz
-下共同探针仍有约 12 dB 峰值，也证明 `sound_effect && sample_rate <= 192000`
-这一音量表条件不代表 tone RAM 在更高采样率下旁路。
+关闭 DSEE 后八档最大时钟误差只有 `0.064%`，固定 family 时钟模型得到直接支持。
+352.8/384 kHz 下共同探针仍有约 12 dB 峰值，也证明
+`sound_effect && sample_rate <= 192000` 这一音量表条件不代表 tone RAM 在
+更高采样率下旁路。DSEE 开启和关闭两轮都支持同一时钟模型；由于 Osmo 存在动态
+增益和偶发曲线扰动，不能把两轮个别拟合差值解释成 DSEE 改变了 tone-DSP 时钟。
 
 旧系数的时钟校准图和数据保存在：
 
 - `samples/measurements/zx300a-usb-dac-clock-calibration/frequency_response.png`
 - `samples/measurements/zx300a-usb-dac-clock-calibration/frequency_response.csv`
 - `samples/measurements/zx300a-usb-dac-clock-calibration/metrics.json`
+
+DSEE 关闭的完整矩阵、定向复测和两轮对比保存在：
+
+- `samples/measurements/zx300a-usb-dac-all-sample-rates-dsee-off/full/`
+- `samples/measurements/zx300a-usb-dac-all-sample-rates-dsee-off/outlier-repeat/`
+- `samples/measurements/zx300a-usb-dac-all-sample-rates-dsee-off/comparison/`
 
 ## 5. RAM half / area 的额外发现
 
@@ -128,11 +145,11 @@ tone-DSP 时钟：
 
 320 字节表正好对应两个 32-word area。为检查当前通路实际读取哪一半，实验在
 half 0 写入 `700 Hz/+12 dB`，在 half 1 写入 `3 kHz/-12 dB`。八档采样率的
-实测曲线都匹配 half 0；按每档真实 family 时钟重算后，除 384 kHz 高频端受采集
-带宽影响外，half 0 匹配 RMSE 为 `0.022–0.043 dB`。
+实测曲线都匹配 half 0；按每档真实 family 时钟重算并采用复测结果后，half 0
+匹配 RMSE 为 `0.019–0.042 dB`。
 
 左右声道单独播放又确认当前单声道录音线只采集 WALKMAN 左输出：左声道激励比
-右声道高 `39.99 dB`。所以目前能够下的严格结论是：
+右声道高 `34.93 dB`。所以目前能够下的严格结论是：
 
 - ZX300A、当前 `TYPE_Z` 强制 apply、USB DAC、3.5 mm 左输出读取 half 0；
 - 不能用当前线缆判断右模拟输出是否读取 half 1；
@@ -163,7 +180,7 @@ OsmoPocket3 的不可关闭动态处理、模拟链路噪声、有限频率分�
 ## 7. 适用范围与限制
 
 - **已验证：** ZX300A、USB DAC 模式、八档 PCM 输入、单端 3.5 mm 左输出、
-  table 5 / `tct_sg` 强制加载通路。
+  DSEE/其他音效关闭、table 5 / `tct_sg` 强制加载通路。
 - **尚未验证：** ZX300A 本机播放器通路、右声道、平衡输出，以及其他 A/ZX/WM
   型号是否使用相同的固定 family tone DSP 时钟和 RAM area 选择。
 - OsmoPocket3 不是测量声卡，因此本报告适合验证滤波形状、中心频率和大幅度增益，
@@ -175,7 +192,7 @@ OsmoPocket3 的不可关闭动态处理、模拟链路噪声、有限频率分�
 ## 8. 完整复现命令
 
 开始前暂停 Windows 和播放器上的所有其他音频，让 ZX300A 进入 USB DAC 模式，
-确认 3.5 mm 输出已连接 OsmoPocket3 录音输入。
+关闭 DSEE、EQ 和其他音效，确认 3.5 mm 输出已连接 OsmoPocket3 录音输入。
 
 ```powershell
 cd D:\Documents\zx300-custom-kernel\walkman-tuning-guide
@@ -201,7 +218,18 @@ powershell -ExecutionPolicy Bypass -File `
 # 八档输入、固定 family 时钟、活动 half 和左右声道映射的完整测试。
 powershell -ExecutionPolicy Bypass -File `
   .\experiments\reproduce\45_measure_zx300a_all_sample_rates.ps1 `
-  -OutputDir experiments\measurements\zx300a-usb-dac-all-sample-rates
+  -OutputDir experiments\measurements\zx300a-usb-dac-all-sample-rates-dsee-off
+
+# 对首轮异常的 48/352.8 kHz 使用 16 周期复测。
+powershell -NoProfile -Command "& {
+  .\experiments\reproduce\45_measure_zx300a_all_sample_rates.ps1 `
+    -OutputDir experiments\measurements\zx300a-usb-dac-dsee-off-outlier-repeat `
+    -Periods 16 -Rates @(48000,352800) -SkipChannelMap
+}"
+
+# 从归档指标重建 DSEE 开关对比报告，不访问设备。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\46_compare_zx300a_dsee_sample_rate_runs.ps1
 ```
 
 脚本只会在音频流关闭后写 table；恢复时会为 2880 字节 table body 添加 Sony

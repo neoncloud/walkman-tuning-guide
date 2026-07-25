@@ -126,6 +126,13 @@ then repeated across all eight USB PCM rates:
 | 44.1 kHz | 44.1 / 88.2 / 176.4 / 352.8 kHz | 约 176.4 kHz |
 | 48 kHz | 48 / 96 / 192 / 384 kHz | 约 192 kHz |
 
+关闭 DSEE 和其他音效后的复测中，八档相对上述固定时钟的最大误差为
+`0.064%`，共同探针最大拟合 RMSE 为 `0.037 dB`。
+
+With DSEE and other effects disabled, the maximum error relative to these
+fixed clocks was `0.064%` across all eight rates, and the maximum
+common-probe fitting RMSE was `0.037 dB`.
+
 因此正确模型是“每个音频族使用固定 tone 时钟”，而不是“永远等于输入采样率
 的四倍”。相对输入的倍率依次约为 4×、2×、1×、0.5×。生成器默认值写成：
 

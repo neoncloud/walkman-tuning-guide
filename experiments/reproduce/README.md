@@ -59,11 +59,13 @@ Autoload edits `/system/bin/bootswitcher.sh`. Confirm manual apply works before 
 ## Windows 回环测量 / Windows Loopback Measurement
 
 以下实验在 Windows 中直接访问 WALKMAN、OsmoPocket3 和 ADB。开始前请暂停所有其他播放，
-并让 ZX300A 进入 USB DAC 模式。WDM-KS 使用独占模式，测量期间不要让其他程序占用设备。
+关闭 DSEE、EQ 和其他音效，并让 ZX300A 进入 USB DAC 模式。WDM-KS 使用独占模式，
+测量期间不要让其他程序占用设备。
 
 The following experiments access the WALKMAN, OsmoPocket3, and ADB directly from
-Windows. Pause all other playback and put the ZX300A in USB DAC mode first.
-WDM-KS is exclusive, so no other application may use either audio device.
+Windows. Pause all other playback, disable DSEE/EQ/other effects, and put the
+ZX300A in USB DAC mode first. WDM-KS is exclusive, so no other application may
+use either audio device.
 
 ```powershell
 cd D:\Documents\zx300-custom-kernel\walkman-tuning-guide
@@ -90,6 +92,17 @@ powershell -ExecutionPolicy Bypass -File `
 powershell -ExecutionPolicy Bypass -File `
   .\experiments\reproduce\45_measure_zx300a_all_sample_rates.ps1 `
   -OutputDir experiments\measurements\zx300a-usb-dac-all-sample-rates
+
+# 对指定异常档增加周期，并跳过已经确认过的声道映射。
+powershell -NoProfile -Command "& {
+  .\experiments\reproduce\45_measure_zx300a_all_sample_rates.ps1 `
+    -OutputDir experiments\measurements\zx300a-usb-dac-outlier-repeat `
+    -Periods 16 -Rates @(48000,352800) -SkipChannelMap
+}"
+
+# 使用归档指标重建 DSEE 开关对比，不访问设备。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\46_compare_zx300a_dsee_sample_rate_runs.ps1
 ```
 
 脚本默认使用 `E:\Downloads\platform-tools\adb.exe`。`40` 至 `42` 会备份并恢复
