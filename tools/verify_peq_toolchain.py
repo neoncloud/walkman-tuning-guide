@@ -73,7 +73,7 @@ def check_sample_quantization(tmp: Path) -> None:
     if sample_blob.stat().st_size != 328:
         fail(f"sample blob size is {sample_blob.stat().st_size}, expected 328")
     preamp, filters = peq.parse_autoeq(sample_txt.read_text())
-    for half, fs in ((0, 44100.0), (1, 48000.0)):
+    for half, fs in ((0, peq.DEFAULT_TONE_FS_441), (1, peq.DEFAULT_TONE_FS_48)):
         encoded = plotter.decode_sections(sample_blob, half)
         ideal = ideal_sections(filters, fs, preamp)
         max_coeff_error = max(abs(a - b) for aa, bb in zip(encoded, ideal) for a, b in zip(aa, bb))
@@ -87,10 +87,55 @@ def check_sample_quantization(tmp: Path) -> None:
     note("sample PEQ Q37 quantization is below tolerance")
 
 
+def check_q37_preamp_distribution(tmp: Path) -> None:
+    """验证高增益 shelf 可通过等价 preamp 分配编码，且级联频响不变。"""
+    evo = tmp / "evo.txt"
+    blob = tmp / "evo.proc"
+    evo.write_text(
+        "\n".join(
+            (
+                "Preamp: -8.74 dB",
+                "Filter 1: ON LSC Fc 105.0 Hz Gain 1.0 dB Q 0.70",
+                "Filter 2: ON PK Fc 213.8 Hz Gain -2.1 dB Q 1.42",
+                "Filter 3: ON PK Fc 1787.5 Hz Gain -4.0 dB Q 1.35",
+                "Filter 4: ON PK Fc 8921.5 Hz Gain 2.8 dB Q 0.18",
+                "Filter 5: ON HSC Fc 20000.0 Hz Gain 16.3 dB Q 0.70",
+            )
+        )
+        + "\n"
+    )
+    run([str(TOOLS / "autoeq_to_cxd3778gf_peq.py"), str(evo), str(blob)])
+    requested_preamp, filters = peq.parse_autoeq(evo.read_text())
+    preamp = peq.limit_preamp_for_headroom(
+        filters,
+        requested_preamp,
+        peq.DEFAULT_TONE_FS_441,
+        peq.DEFAULT_TONE_FS_48,
+        "first",
+        5,
+    )
+    if not preamp < requested_preamp:
+        fail("EVO fixture should require additional headroom at the 4x tone-DSP clocks")
+    freqs = peq.logspace(20.0, 20000.0, 512)
+    for half, fs in ((0, peq.DEFAULT_TONE_FS_441), (1, peq.DEFAULT_TONE_FS_48)):
+        encoded = plotter.decode_sections(blob, half)
+        expected = [
+            value + preamp
+            for value in peq.response_db_for_filters(filters, freqs, fs)
+        ]
+        actual = [response_db(encoded, freq, fs) for freq in freqs]
+        max_error = max(abs(got - want) for got, want in zip(actual, expected))
+        if max_error > 1e-5:
+            fail(f"distributed-preamp response error is {max_error:.3e} dB for half={half}")
+        if max(actual) > 1e-5:
+            fail(f"automatic headroom left a positive peak of {max(actual):.6f} dB for half={half}")
+    note("preamp distribution keeps high-gain shelves inside Q37 without changing response")
+
+
 def strategy_error(filters: list[peq.Filter], selected: list[peq.Filter]) -> tuple[float, float]:
     freqs = peq.logspace(20.0, 20000.0, 512)
-    target = peq.response_db_for_filters(filters, freqs, 44100.0)
-    got = peq.response_db_for_filters(selected, freqs, 44100.0)
+    target = peq.response_db_for_filters(filters, freqs, peq.DEFAULT_TONE_FS_441)
+    got = peq.response_db_for_filters(selected, freqs, peq.DEFAULT_TONE_FS_441)
     diffs = [a - b for a, b in zip(got, target)]
     rms = math.sqrt(sum(d * d for d in diffs) / len(diffs))
     return rms, max(abs(d) for d in diffs)
@@ -123,13 +168,26 @@ def check_plotter(tmp: Path) -> None:
     sample = ROOT / "samples" / "filter-strategy" / "best.bin"
     run([str(TOOLS / "plot_cxd3778gf_tct_response.py"), "--out-dir", str(out), "--chunk-file", f"best={sample}"])
     for name in (
-        "cxd3778gf_tct_response_half0_44100hz.svg",
-        "cxd3778gf_tct_response_half1_48000hz.svg",
+        "cxd3778gf_tct_response_half0_176400hz.svg",
+        "cxd3778gf_tct_response_half1_192000hz.svg",
         "cxd3778gf_tct_response_summary.txt",
     ):
         if not (out / name).is_file() or (out / name).stat().st_size == 0:
             fail(f"plotter did not create {name}")
     note("plotter accepts direct custom chunk files")
+
+
+def check_default_tone_clock() -> None:
+    if peq.DEFAULT_TONE_FS_441 != 176400.0 or peq.DEFAULT_TONE_FS_48 != 192000.0:
+        fail(
+            "default tone-DSP clocks changed unexpectedly: "
+            f"{peq.DEFAULT_TONE_FS_441:g}/{peq.DEFAULT_TONE_FS_48:g}"
+        )
+    probe = peq.Filter("PK", 1000.0, 12.0, 1.0)
+    at_center = peq.response_db_for_filters([probe], [1000.0], peq.DEFAULT_TONE_FS_48)[0]
+    if abs(at_center - 12.0) > 1e-6:
+        fail(f"192 kHz RBJ center response is {at_center:.6f} dB, expected 12 dB")
+    note("default 176.4/192 kHz tone-DSP clocks preserve the requested center frequency")
 
 
 def check_full_table_builder(tmp: Path) -> None:
@@ -197,8 +255,10 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="cxd3778gf-peq-verify-") as td:
         tmp = Path(td)
         check_syntax()
+        check_default_tone_clock()
         check_empty_matches_sg(tmp)
         check_sample_quantization(tmp)
+        check_q37_preamp_distribution(tmp)
         check_filter_strategies()
         check_plotter(tmp)
         check_full_table_builder(tmp)

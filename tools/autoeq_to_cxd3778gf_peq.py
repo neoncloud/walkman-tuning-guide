@@ -2,7 +2,9 @@
 """Generate an experimental CXD3778GF tone-RAM PEQ blob from AutoEq-style filters.
 
 The CXD3778GF tone RAM chunk used by tc_*.tbl is 320 bytes:
-  - two 160-byte halves, assumed 44.1k-family and 48k-family coefficient sets
+  - two 160-byte halves for the 44.1k-family and 48k-family coefficient sets
+  - hardware measurements show that the tone IIR runs at 4x the audio rate,
+    so the default coefficient clocks are 176.4 kHz and 192 kHz
   - each half has 32 signed 40-bit big-endian Q37 words
   - words 0..24 are interpreted as five biquad sections of
     b0, b1, b2, -a1, -a2
@@ -31,6 +33,15 @@ HALF_WORDS = 32
 HALF_SIZE = HALF_WORDS * 5
 CHUNK_SIZE = HALF_SIZE * 2
 CHECKSUM_SIZE = 8
+
+# ZX300A USB DAC 回环实测：48 kHz 输入下，按 48 kHz 设计的 1 kHz 峰值会
+# 出现在约 4 kHz；改按 192 kHz 设计后中心回到 1 kHz。因此两个 half 默认
+# 使用对应音频采样率的 4 倍 tone-DSP 时钟。CLI 仍允许覆盖，便于验证其他机型。
+AUDIO_FS_441 = 44100.0
+AUDIO_FS_48 = 48000.0
+TONE_DSP_RATE_MULTIPLIER = 4.0
+DEFAULT_TONE_FS_441 = AUDIO_FS_441 * TONE_DSP_RATE_MULTIPLIER
+DEFAULT_TONE_FS_48 = AUDIO_FS_48 * TONE_DSP_RATE_MULTIPLIER
 
 
 @dataclass
@@ -68,6 +79,77 @@ def decode_q37(word: bytes) -> float:
 
 def identity_sections():
     return [[1.0, 0.0, 0.0, 0.0, 0.0] for _ in range(SECTIONS)]
+
+
+def coefficients_fit_q37(sections: Iterable[Iterable[float]]) -> bool:
+    """检查浮点系数四舍五入到 Q37 后是否都能放进 signed 40-bit。"""
+    for section in sections:
+        for value in section:
+            raw = int(round(value * SCALE))
+            if raw < WORD_MIN or raw > WORD_MAX:
+                return False
+    return True
+
+
+def distribute_preamp_for_q37(sections: List[List[float]], preamp_db: float) -> List[List[float]]:
+    """在各段 numerator 之间等价分配 preamp，避免单个 Q37 系数溢出。
+
+    级联中每段 numerator 的常数缩放最终只以乘积出现。因此，只要所有缩放
+    因子的乘积仍等于原始 preamp gain，总频响就不变。通常仍沿用“全部折入
+    第一段”的简单表示；只有它无法编码时，才在 log-gain 域做受限均匀分配。
+    """
+    gain = 10 ** (preamp_db / 20.0)
+    legacy = [list(section) for section in sections]
+    for index in range(3):
+        legacy[0][index] *= gain
+    if coefficients_fit_q37(legacy):
+        return legacy
+
+    # denominator 不能通过段间增益重分配改变；若它自身溢出只能拒绝。
+    for section_index, section in enumerate(sections):
+        if not coefficients_fit_q37([[0.0, 0.0, 0.0, section[3], section[4]]]):
+            raise ValueError(
+                f"section {section_index + 1} denominator exceeds signed Q37 range"
+            )
+
+    # 给每段计算 numerator 可接受的最大正缩放。留一个 LSB 余量，避免浮点
+    # 边界在 round() 时跨出 WORD_MAX。
+    safe_max = (WORD_MAX - 1) / SCALE
+    caps = []
+    for section in sections:
+        numerator_max = max(abs(value) for value in section[:3])
+        caps.append(safe_max / numerator_max)
+
+    max_product = math.prod(caps)
+    if gain > max_product:
+        extra_attenuation_db = 20.0 * math.log10(gain / max_product)
+        raise ValueError(
+            "preamp is insufficient for the signed Q37 coefficient range; "
+            f"reduce preamp by at least {extra_attenuation_db:.3f} dB"
+        )
+
+    # 求一个共同 log-scale；达到某段上限后将它钳住，其余段继续共同承担增益。
+    target_log = math.log(gain)
+    cap_logs = [math.log(cap) for cap in caps]
+    low = min(target_log - 100.0, min(cap_logs) - 100.0)
+    high = max(max(cap_logs), target_log) + 100.0
+    for _ in range(200):
+        middle = (low + high) / 2.0
+        total = sum(min(middle, cap_log) for cap_log in cap_logs)
+        if total < target_log:
+            low = middle
+        else:
+            high = middle
+    common_log = (low + high) / 2.0
+    scales = [math.exp(min(common_log, cap_log)) for cap_log in cap_logs]
+
+    distributed = [list(section) for section in sections]
+    for section, scale in zip(distributed, scales):
+        for index in range(3):
+            section[index] *= scale
+    if not coefficients_fit_q37(distributed):
+        raise ValueError("internal error: distributed preamp still exceeds signed Q37 range")
+    return distributed
 
 
 def rbj_peaking(f: Filter, fs: float):
@@ -201,9 +283,36 @@ def rms_error_db(candidate: List[Filter], target_db: List[float], freqs: List[fl
     return math.sqrt(total / len(target_db))
 
 
+def limit_preamp_for_headroom(
+    filters: List[Filter],
+    requested_preamp_db: float,
+    fs441: float,
+    fs48: float,
+    filter_strategy: str,
+    max_sections: int,
+    headroom_db: float = 0.0,
+) -> float:
+    """按实际 tone-DSP 时钟重新计算 AutoEq preamp，防止可听频段 boost 削波。
+
+    AutoEq 文件里的 preamp 通常按 44.1/48 kHz 软件 EQ 计算。tone IIR 改按
+    176.4/192 kHz 设计后，高频双线性扭曲不同，原 preamp 不一定仍覆盖所有
+    filter 的叠加峰值。这里只增加必要的全局衰减，不改变滤波器相对频响。
+    """
+    if headroom_db < 0.0:
+        raise ValueError(f"headroom_db must be non-negative, got {headroom_db}")
+    selected, _ignored = select_filters(filters, filter_strategy, max_sections)
+    freqs = logspace(20.0, 20000.0, 8192)
+    max_filter_db = max(
+        max(response_db_for_filters(selected, freqs, fs441)),
+        max(response_db_for_filters(selected, freqs, fs48)),
+    )
+    safe_preamp_db = -max_filter_db - headroom_db
+    return min(requested_preamp_db, safe_preamp_db)
+
+
 def select_filters_greedy(filters: List[Filter], max_sections: int) -> Tuple[List[Filter], List[Filter]]:
     freqs = logspace(20.0, 20000.0, 192)
-    fs = 44100.0
+    fs = DEFAULT_TONE_FS_441
     target_db = response_db_for_filters(filters, freqs, fs)
     selected_indexes: List[int] = []
     remaining = set(range(len(filters)))
@@ -230,7 +339,7 @@ def select_filters_greedy(filters: List[Filter], max_sections: int) -> Tuple[Lis
 
 def select_filters_best(filters: List[Filter], max_sections: int) -> Tuple[List[Filter], List[Filter]]:
     freqs = logspace(20.0, 20000.0, 192)
-    fs = 44100.0
+    fs = DEFAULT_TONE_FS_441
     target_db = response_db_for_filters(filters, freqs, fs)
     indexes = range(len(filters))
     combination_count = math.comb(len(filters), max_sections)
@@ -281,11 +390,7 @@ def render_half(filters: Iterable[Filter], fs: float, preamp_db: float):
     selected = list(filters)[:SECTIONS]
     for i, f in enumerate(selected):
         sections[i] = coefficients(f, fs)
-    gain = 10 ** (preamp_db / 20.0)
-    # Fold preamp into the first numerator. This preserves section count.
-    sections[0][0] *= gain
-    sections[0][1] *= gain
-    sections[0][2] *= gain
+    sections = distribute_preamp_for_q37(sections, preamp_db)
 
     words = []
     for section in sections:
@@ -338,18 +443,60 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=Path, help="AutoEq-style filter text")
     parser.add_argument("output", type=Path, help="output PEQ blob")
-    parser.add_argument("--fs441", type=float, default=44100.0, help="sample rate for first half")
-    parser.add_argument("--fs48", type=float, default=48000.0, help="sample rate for second half")
+    parser.add_argument(
+        "--fs441",
+        type=float,
+        default=DEFAULT_TONE_FS_441,
+        help="tone-DSP coefficient rate for the 44.1k-family half (default: 176400)",
+    )
+    parser.add_argument(
+        "--fs48",
+        type=float,
+        default=DEFAULT_TONE_FS_48,
+        help="tone-DSP coefficient rate for the 48k-family half (default: 192000)",
+    )
     parser.add_argument("--body-only", action="store_true", help="write only 320-byte body, without checksum")
     parser.add_argument("--filter-strategy", choices=("first", "largest", "wide", "greedy", "best"), default="first", help="how to choose filters when input has more than five")
     parser.add_argument("--max-sections", type=int, default=SECTIONS, help=f"number of biquad sections to use, 1..{SECTIONS}")
+    parser.add_argument(
+        "--headroom-db",
+        type=float,
+        default=0.0,
+        help="minimum peak headroom after recalculating response at the tone-DSP clocks",
+    )
+    parser.add_argument(
+        "--preserve-preamp",
+        action="store_true",
+        help="do not add attenuation when the input preamp is insufficient at the tone-DSP clocks",
+    )
     parser.add_argument("--dump", action="store_true", help="print decoded coefficients after writing")
     args = parser.parse_args()
 
-    preamp, filters = parse_autoeq(args.input.read_text())
+    requested_preamp, filters = parse_autoeq(args.input.read_text())
+    preamp = requested_preamp
+    if not args.preserve_preamp:
+        preamp = limit_preamp_for_headroom(
+            filters,
+            requested_preamp,
+            args.fs441,
+            args.fs48,
+            args.filter_strategy,
+            args.max_sections,
+            args.headroom_db,
+        )
+        if preamp < requested_preamp - 1e-9:
+            print(
+                f"warning: adjusted preamp from {requested_preamp:+.3f} dB "
+                f"to {preamp:+.3f} dB for {args.headroom_db:.3f} dB headroom"
+            )
     blob = render(filters, preamp, args.fs441, args.fs48, not args.body_only, args.filter_strategy, args.max_sections)
     args.output.write_bytes(blob)
-    print(f"preamp_db={preamp} filters={len(filters)} strategy={args.filter_strategy} max_sections={args.max_sections} written={args.output} bytes={len(blob)}")
+    print(
+        f"requested_preamp_db={requested_preamp} applied_preamp_db={preamp} "
+        f"filters={len(filters)} strategy={args.filter_strategy} "
+        f"max_sections={args.max_sections} fs441={args.fs441:g} fs48={args.fs48:g} "
+        f"written={args.output} bytes={len(blob)}"
+    )
     if args.dump:
         dump_coefficients(blob)
 

@@ -87,9 +87,49 @@ After normalization, the codec order is:
 b0, b1, b2, -a1, -a2
 ```
 
-同一组逻辑滤波器会分别以 44100 Hz 和 48000 Hz 采样率计算一次，写入 chunk 的两个 half。
+同一组逻辑滤波器会写入 chunk 的两个 half。两个 half 分别服务于 44.1 kHz
+和 48 kHz 音频族，但这里必须区分**音频输入采样率**与**tone IIR 的实际运行时钟**。
 
-The same logical filter set is calculated twice, at 44100 Hz and 48000 Hz, and written into the two halves of the chunk.
+The same logical filter set is written into both halves of the chunk. The halves
+serve the 44.1 kHz and 48 kHz audio families, but the **input audio rate** must
+be distinguished from the **actual tone-IIR processing clock**.
+
+ZX300A USB DAC 的定量回环结果为：
+
+Quantitative ZX300A USB DAC loopback results show:
+
+| half | 音频族 / Audio family | 默认 tone-DSP 系数时钟 / Default coefficient clock |
+|---|---:|---:|
+| 0 | 44.1 kHz | 176.4 kHz |
+| 1 | 48 kHz | 192 kHz |
+
+旧算法直接按 44.1/48 kHz 计算 RBJ 系数。在 48 kHz USB 输入下，设定为
+1 kHz 的峰值实测出现在约 4.025 kHz，设定为 4 kHz 的陷波出现在约
+15.9 kHz；使用 192 kHz 重新计算后，中心分别回到 1 kHz 和 4 kHz。
+因此当前生成器默认使用 4 倍时钟：
+
+The legacy algorithm calculated RBJ coefficients directly at 44.1/48 kHz.
+With 48 kHz USB input, a requested 1 kHz peak appeared at about 4.025 kHz,
+and a requested 4 kHz notch appeared at about 15.9 kHz. Recalculating at
+192 kHz moved the centers back to 1 kHz and 4 kHz. The generator therefore
+uses the 4x clocks by default:
+
+```text
+tone_fs_44k1_family = 44100 * 4 = 176400 Hz
+tone_fs_48k_family  = 48000 * 4 = 192000 Hz
+```
+
+`--fs441` 和 `--fs48` 仍可覆盖默认值，用于其他型号或尚未测量的播放通路。
+目前 4 倍关系的直接定量证据来自 ZX300A USB DAC 48 kHz 通路；其他通路应在
+有测量条件时继续验证。
+
+`--fs441` and `--fs48` can still override the defaults for other models or
+unmeasured playback paths. Direct quantitative evidence for the 4x relation
+currently comes from the ZX300A USB DAC 48 kHz path; other paths should be
+measured when suitable hardware is available.
+
+完整报告见
+[`zx300a-usb-dac-loopback-validation.zh.md`](zx300a-usb-dac-loopback-validation.zh.md)。
 
 ## Q37 定点编码 / Q37 Fixed-Point Encoding
 
@@ -113,6 +153,49 @@ Before writing, check:
   Section peak and cascade-prefix peak.
 - 定点量化后频响是否仍然接近目标。  
   Whether the quantized response still matches the target.
+
+### Preamp 与 Q37 范围 / Preamp and Q37 Range
+
+signed 40-bit Q37 可表示的范围约为 `[-4, 4)`。在 176.4/192 kHz 时钟下，
+高增益 shelf 的某个 numerator 系数可能超过这个范围，即使滤波器本身稳定。
+直接截断系数会破坏频响，因此生成器采用级联等价变换：
+
+The signed 40-bit Q37 range is approximately `[-4, 4)`. At the
+176.4/192 kHz clocks, a high-gain shelf can produce a numerator coefficient
+outside this range even though the filter itself is stable. Clipping the
+coefficient would corrupt the response, so the generator uses an equivalent
+cascade transformation:
+
+```text
+H_total = (s1 * H1) * (s2 * H2) * ... * (s5 * H5)
+where s1 * s2 * ... * s5 = preamp_linear
+```
+
+默认情况下，preamp 仍全部折入第一段 numerator。只有出现 Q37 溢出时，才在
+五段 numerator 之间受限分配缩放；缩放乘积严格保持原 preamp，因此总频响和
+极点完全不变。若即使最优分配也无法编码，工具会拒绝输出并提示至少需要增加
+多少 dB 衰减。
+
+By default, preamp is still folded into the first numerator. Only when this
+would overflow Q37 is the gain distributed across the five numerators under
+per-section limits. Their product remains exactly equal to the requested
+preamp, so the total response and poles do not change. If no valid
+distribution exists, the tool refuses to write output and reports the
+additional attenuation required.
+
+此外，AutoEq 文件的 preamp 通常是按 44.1/48 kHz 软件 EQ 响应计算的。改用
+176.4/192 kHz tone-DSP 时钟后，Nyquist 附近的双线性扭曲发生变化，原 preamp
+可能不再覆盖多个滤波器的叠加峰值。AutoEq 转换器会在 20 Hz 至 20 kHz 上重新
+计算两个 half 的最大增益，并在必要时增加全局衰减。可用 `--headroom-db`
+预留额外余量，或用 `--preserve-preamp` 禁用自动修正。
+
+AutoEq preamp values are normally calculated from a software EQ response at
+44.1/48 kHz. At the 176.4/192 kHz tone-DSP clocks, bilinear warping near
+Nyquist changes, so the original preamp may no longer cover the combined
+filter peak. The AutoEq converters recalculate the maximum response of both
+halves from 20 Hz to 20 kHz and add global attenuation when necessary.
+`--headroom-db` reserves additional margin, while `--preserve-preamp`
+disables this automatic correction.
 
 ## 超过五段 AutoEq 的处理 / More Than Five AutoEq Filters
 

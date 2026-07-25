@@ -18,6 +18,7 @@ device-dumps/
 *.lnk
 *.bin
 *.tbl
+experiments/measurements/
 !samples/filter-strategy/*.bin
 !samples/sample-autoeq.txt
 !scripts/*.cmd

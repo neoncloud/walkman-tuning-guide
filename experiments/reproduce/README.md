@@ -55,3 +55,51 @@ bash experiments/reproduce/99_uninstall_cxd3778gf_tone_apply_autoload.sh
 autoload 会修改 `/system/bin/bootswitcher.sh`。启用前请先确认手动 apply 已经工作。
 
 Autoload edits `/system/bin/bootswitcher.sh`. Confirm manual apply works before enabling it.
+
+## Windows 回环测量 / Windows Loopback Measurement
+
+以下实验在 Windows 中直接访问 WALKMAN、OsmoPocket3 和 ADB。开始前请暂停所有其他播放，
+并让 ZX300A 进入 USB DAC 模式。WDM-KS 使用独占模式，测量期间不要让其他程序占用设备。
+
+The following experiments access the WALKMAN, OsmoPocket3, and ADB directly from
+Windows. Pause all other playback and put the ZX300A in USB DAC mode first.
+WDM-KS is exclusive, so no other application may use either audio device.
+
+```powershell
+cd D:\Documents\zx300-custom-kernel\walkman-tuning-guide
+C:\Python312\python.exe -m pip install -r requirements.txt
+
+# 单音对数扫频：用于展示 Osmo AGC 对传统扫频的影响。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\40_zx300a_usb_dac_loopback_sweep.ps1 `
+  -OutputDir experiments\measurements\zx300a-usb-dac-sweep
+
+# 旧 44.1/48 kHz 系数：用于测量中心频率偏移并校准 DSP 时钟。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\41_zx300a_usb_dac_periodic_noise.ps1 `
+  -OutputDir experiments\measurements\zx300a-usb-dac-clock-calibration `
+  -LevelDbfs -32 -Periods 16
+
+# 176.4/192 kHz 系数：USB DAC 模式的最终定量验证。
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\42_zx300a_usb_dac_4x_clock_corrected.ps1 `
+  -OutputDir experiments\measurements\zx300a-usb-dac-4x-clock-corrected `
+  -LevelDbfs -32 -Periods 16
+```
+
+三个脚本默认使用 `E:\Downloads\platform-tools\adb.exe`。每次实验都会先保存当前
+table body，生成带 Sony 校验和的恢复表，并在测量结束后恢复。完整结论见
+[`docs/zx300a-usb-dac-loopback-validation.zh.md`](../../docs/zx300a-usb-dac-loopback-validation.zh.md)。
+
+### Etymotic EVO 2-flange：生成并持久化安装
+
+脚本会先备份当前 proc table 和现有 `auto_tct.tbl`，明确使用
+`176400/192000 Hz` 生成完整 table，校验本地/远端 MD5，随后写入运行时并设为
+开机自动加载的 table。写表前必须停止所有播放和录音。
+
+```powershell
+cd D:\Documents\zx300-custom-kernel\walkman-tuning-guide
+powershell -ExecutionPolicy Bypass -File `
+  .\experiments\reproduce\43_install_etymotic_evo_2flange_zx300a.ps1 `
+  -Input "E:\Downloads\Etymotic Evo (2-flange eartips) ParametricEq.txt"
+```

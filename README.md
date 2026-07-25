@@ -90,6 +90,30 @@ python3 tools/autoeq_to_cxd3778gf_table.py samples/sample-autoeq.txt out/custom.
   --filter-strategy best
 ```
 
+> [!IMPORTANT]
+> ZX300A 的 48 kHz USB DAC 回环实测表明，CXD3778GF tone IIR 以音频采样率的
+> 4 倍运行。生成器现在默认按 `176.4 kHz` 和 `192 kHz` 分别计算两个 half，
+> 而不是旧版的 `44.1 kHz` 和 `48 kHz`。旧算法会把 1 kHz 滤波器移动到约
+> 4 kHz。其他硬件通路尚未全部测量；如需复现实验或覆盖默认值，可显式传入
+> `--fs441` 和 `--fs48`。
+>
+> ZX300A 48 kHz USB DAC loopback measurements show that the CXD3778GF tone
+> IIR runs at 4x the audio sample rate. The generator now defaults to
+> `176.4 kHz` and `192 kHz` for the two halves instead of the legacy
+> `44.1 kHz` and `48 kHz`. The legacy calculation moves a requested 1 kHz
+> filter to about 4 kHz. Other hardware paths have not all been measured;
+> use `--fs441` and `--fs48` to override the defaults when needed.
+
+生成器还会按新的 tone-DSP 时钟重新检查 20 Hz 至 20 kHz 的总峰值；如果 AutoEq
+原始 preamp 不再足够，会只增加必要的全局衰减，保持相对频响不变。可用
+`--headroom-db` 增加余量，或用 `--preserve-preamp` 保留文件中的原值。
+
+The generator also rechecks the 20 Hz to 20 kHz peak at the corrected
+tone-DSP clocks. If the original AutoEq preamp is no longer sufficient, it
+adds only the required global attenuation while preserving the relative
+response. Use `--headroom-db` for extra margin or `--preserve-preamp` to keep
+the input value unchanged.
+
 如果目标来自 minimum-phase WAV 或需要拟合响应曲线，可使用：
 
 For a minimum-phase WAV target or response fitting:
@@ -322,9 +346,9 @@ The CXD3778GF table stores coefficients in this order:
 b0, b1, b2, -a1, -a2
 ```
 
-每个系数编码为 signed 40-bit big-endian Q37 定点数。一个 table chunk 有两个 160-byte half，当前解释为 44.1 kHz family 和 48 kHz family；每个 half 的前 25 个 40-bit word 对应 5 个 biquad。
+每个系数编码为 signed 40-bit big-endian Q37 定点数。一个 table chunk 有两个 160-byte half，分别服务于 44.1 kHz family 和 48 kHz family；每个 half 的前 25 个 40-bit word 对应 5 个 biquad。ZX300A USB DAC 定量回环进一步确认，系数不是按输入音频的 44.1/48 kHz 直接计算，而应按 tone DSP 的 176.4/192 kHz 时钟计算。
 
-Each coefficient is encoded as signed 40-bit big-endian Q37. A table chunk has two 160-byte halves, currently interpreted as the 44.1 kHz and 48 kHz families. The first 25 40-bit words of each half represent five biquads.
+Each coefficient is encoded as signed 40-bit big-endian Q37. A table chunk has two 160-byte halves for the 44.1 kHz and 48 kHz audio families. The first 25 40-bit words of each half represent five biquads. Quantitative ZX300A USB DAC loopback measurements further show that coefficients must be calculated at the 176.4/192 kHz tone-DSP clocks, not directly at the 44.1/48 kHz input-audio rates.
 
 由于硬件只有 5 个级联 biquad，AutoEq 超过五段时需要裁剪或拟合。本项目提供 `first`、`largest`、`wide`、`greedy`、`best` 等策略；也提供从 RBJ 初值出发、对目标频响进行直接优化的工具，并可对 1 kHz 到 6 kHz 人耳敏感频段赋予更高权重。
 
@@ -333,6 +357,12 @@ Because the hardware exposes only five cascaded biquads, AutoEq profiles with mo
 详见 [docs/algorithm.zh-en.md](docs/algorithm.zh-en.md)。
 
 For details, see [docs/algorithm.zh-en.md](docs/algorithm.zh-en.md).
+
+定量测量、误差数据和完整复现流程见
+[docs/zx300a-usb-dac-loopback-validation.zh.md](docs/zx300a-usb-dac-loopback-validation.zh.md)。
+
+See [docs/zx300a-usb-dac-loopback-validation.zh.md](docs/zx300a-usb-dac-loopback-validation.zh.md)
+for the quantitative measurements, error data, and full reproduction procedure.
 
 ## 项目背景与构建 / Background and Build Story
 

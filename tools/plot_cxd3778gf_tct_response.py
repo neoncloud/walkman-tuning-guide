@@ -2,7 +2,8 @@
 """Plot CXD3778GF tone-control table response as cascaded biquads.
 
 Assumed 320-byte chunk layout:
-  - two 160-byte halves, normally for 44.1 kHz and 48 kHz families
+  - two 160-byte halves for 44.1 kHz and 48 kHz audio families
+  - measured default tone-DSP clocks are 176.4 kHz and 192 kHz
   - each half has 32 signed 40-bit big-endian Q37 words
   - first 25 words are five biquads: b0, b1, b2, -a1, -a2
 """
@@ -13,7 +14,13 @@ import argparse
 import cmath
 import csv
 import math
+import sys
 from pathlib import Path
+
+TOOL_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(TOOL_DIR))
+
+import autoeq_to_cxd3778gf_peq as peq  # noqa: E402
 
 
 SCALE = 1 << 37
@@ -191,6 +198,18 @@ def main() -> None:
         metavar="NAME=PATH",
         help="extra 320-byte or 328-byte chunk/blob to plot; may be repeated",
     )
+    parser.add_argument(
+        "--fs441",
+        type=float,
+        default=peq.DEFAULT_TONE_FS_441,
+        help="tone-DSP coefficient rate for half 0 (default: 176400)",
+    )
+    parser.add_argument(
+        "--fs48",
+        type=float,
+        default=peq.DEFAULT_TONE_FS_48,
+        help="tone-DSP coefficient rate for half 1 (default: 192000)",
+    )
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -212,7 +231,8 @@ def main() -> None:
         raise SystemExit("provide --dump-dir/--chunks or at least one --chunk-file NAME=PATH")
 
     key_freqs = (20, 31.5, 63, 100, 200, 500, 1000, 2000, 4000, 8000, 10000, 16000, 20000)
-    for half, fs in ((0, 44100), (1, 48000)):
+    for half, fs in ((0, args.fs441), (1, args.fs48)):
+        fs_label = f"{fs:g}"
         curves: dict[str, list[float]] = {}
         for name, path in chunk_paths.items():
             sections = decode_sections(path, half)
@@ -228,7 +248,7 @@ def main() -> None:
                 f"  {', '.join(key_points)}"
             )
 
-        csv_path = args.out_dir / f"cxd3778gf_tct_response_half{half}_{fs}hz.csv"
+        csv_path = args.out_dir / f"cxd3778gf_tct_response_half{half}_{fs_label}hz.csv"
         with csv_path.open("w", newline="") as fp:
             writer = csv.writer(fp)
             curve_names = list(curves)
@@ -236,7 +256,13 @@ def main() -> None:
             for idx, freq in enumerate(freqs):
                 writer.writerow([freq, *[curves[name][idx] for name in curve_names]])
 
-        write_svg(args.out_dir / f"cxd3778gf_tct_response_half{half}_{fs}hz.svg", curves, freqs, half, fs)
+        write_svg(
+            args.out_dir / f"cxd3778gf_tct_response_half{half}_{fs_label}hz.svg",
+            curves,
+            freqs,
+            half,
+            fs,
+        )
 
     (args.out_dir / "cxd3778gf_tct_response_summary.txt").write_text("\n".join(summary_lines) + "\n")
 

@@ -1,0 +1,104 @@
+{
+  "frequency_range_for_metrics_hz": [
+    30.0,
+    18000.0
+  ],
+  "capture_sample_rate_hz": 48000,
+  "dsp_sample_rate_hz": 192000,
+  "baseline_repeatability_rmse_db": 0.022791947945799383,
+  "stock_restore_rmse_db": 0.02195136041870131,
+  "profiles": {
+    "pk_1000_plus12_q1": {
+      "global_level_offset_removed_db": -0.0033420514842005863,
+      "rmse_30_18000_db": 0.5101560057556156,
+      "mae_30_18000_db": 0.30449675129493786,
+      "max_abs_error_30_18000_db": 1.3912278866294088,
+      "rmse_1000_6000_db": 0.8420156470044312,
+      "correlation_30_18000": 0.9883905446061221,
+      "focus_frequency_hz": 4025.484981352518,
+      "expected_at_focus_db": 11.99737225647921,
+      "measured_at_focus_db": 11.653160808209417,
+      "error_at_focus_db": -0.34421144826979244
+    },
+    "pk_4000_minus12_q1": {
+      "global_level_offset_removed_db": 0.002070891406804956,
+      "rmse_30_18000_db": 0.38219969336922666,
+      "mae_30_18000_db": 0.17651344606602667,
+      "max_abs_error_30_18000_db": 1.3665691345391862,
+      "rmse_1000_6000_db": 0.14914319850925886,
+      "correlation_30_18000": 0.9962238129860239,
+      "focus_frequency_hz": 15901.168595678142,
+      "expected_at_focus_db": -11.997274550074241,
+      "measured_at_focus_db": -11.515445921584467,
+      "error_at_focus_db": 0.48182862848977415
+    },
+    "three_band_100p9_1000m9_6000p9": {
+      "global_level_offset_removed_db": -0.021694870433113217,
+      "rmse_30_18000_db": 0.6381551469883441,
+      "mae_30_18000_db": 0.5329637094794111,
+      "max_abs_error_30_18000_db": 1.168244448957683,
+      "rmse_1000_6000_db": 0.7079970746435281,
+      "correlation_30_18000": 0.9880534998937962,
+      "focus_frequency_hz": 398.677532258726,
+      "expected_at_focus_db": 8.895769212594725,
+      "measured_at_focus_db": 8.61112633418406,
+      "error_at_focus_db": -0.28464287841066493
+    }
+  },
+  "alignment": {
+    "stock_before_1": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 136304,
+        "latency_ms": 839.6666666666666,
+        "normalized_correlation": 0.571228504601707,
+        "periods_used": 14
+      }
+    ],
+    "stock_before_2": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137592,
+        "latency_ms": 866.5,
+        "normalized_correlation": 0.5190455875700375,
+        "periods_used": 14
+      }
+    ],
+    "pk_1000_plus12_q1": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137816,
+        "latency_ms": 871.1666666666666,
+        "normalized_correlation": 0.3542557698114855,
+        "periods_used": 14
+      }
+    ],
+    "pk_4000_minus12_q1": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 136952,
+        "latency_ms": 853.1666666666666,
+        "normalized_correlation": 0.7655537487603532,
+        "periods_used": 14
+      }
+    ],
+    "three_band_100p9_1000m9_6000p9": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137728,
+        "latency_ms": 869.3333333333334,
+        "normalized_correlation": 0.66222909963967,
+        "periods_used": 14
+      }
+    ],
+    "stock_after_restore": [
+      {
+        "expected_start_sample": 96000,
+        "detected_start_sample": 137616,
+        "latency_ms": 867.0,
+        "normalized_correlation": 0.8696885466013486,
+        "periods_used": 14
+      }
+    ]
+  }
+}

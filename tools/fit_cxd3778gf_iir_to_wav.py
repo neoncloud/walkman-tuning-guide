@@ -55,11 +55,9 @@ def logspace(start: float, stop: float, count: int) -> np.ndarray:
     return np.logspace(math.log10(start), math.log10(stop), count)
 
 
-def load_target(path: Path, fs_expected: float, nfft: int, freqs: np.ndarray) -> np.ndarray:
+def load_target(path: Path, nfft: int, freqs: np.ndarray) -> np.ndarray:
     """读取 minimum-phase WAV，并插值得到目标 dB 幅频响应。"""
     fs, impulse = wavfile.read(path)
-    if fs != int(fs_expected):
-        raise SystemExit(f"{path}: expected {fs_expected:g} Hz WAV, got {fs} Hz")
     if impulse.ndim > 1:
         impulse = impulse[:, 0]
     original_dtype = impulse.dtype
@@ -332,8 +330,18 @@ def main() -> None:
     parser.add_argument("--chunk", type=Path, required=True, help="输出 320-byte raw chunk；同目录会额外写 .tbl checksum chunk")
     parser.add_argument("--metadata", type=Path, required=True, help="输出 JSON 元数据")
     parser.add_argument("--autoeq-peq", type=Path, help="可选 AutoEq ParametricEQ.txt，用作初值")
-    parser.add_argument("--fs441", type=float, default=44100.0)
-    parser.add_argument("--fs48", type=float, default=48000.0)
+    parser.add_argument(
+        "--fs441",
+        type=float,
+        default=peq.DEFAULT_TONE_FS_441,
+        help="44.1k 音频族对应的 tone-DSP 系数时钟，默认 176400",
+    )
+    parser.add_argument(
+        "--fs48",
+        type=float,
+        default=peq.DEFAULT_TONE_FS_48,
+        help="48k 音频族对应的 tone-DSP 系数时钟，默认 192000",
+    )
     parser.add_argument("--points", type=int, default=384)
     parser.add_argument("--topology", action="append", default=[], help="5 段拓扑，例如 LSC,PK,PK,PK,HSC；可重复")
     parser.add_argument("--global-search", action="store_true", help="先做 differential evolution 再 least_squares，较慢")
@@ -358,7 +366,9 @@ def main() -> None:
             defaults = defaults[:5]
 
     freqs = logspace(20.0, 20000.0, args.points)
-    target_db = load_target(args.wav, args.fs48, 65536, freqs)
+    # WAV 自身采样率只决定目标冲击响应的 FFT 频轴；IIR 系数必须按独立的
+    # CXD3778GF tone-DSP 时钟计算，二者不能再视为同一个采样率。
+    target_db = load_target(args.wav, 65536, freqs)
     topologies = args.topology or list(DEFAULT_TOPOLOGIES)
     if args.sensitive_band.lower() in ("none", "off", "0"):
         sensitive_band = None
@@ -417,6 +427,10 @@ def main() -> None:
         "output_table": str(args.output_table),
         "chunk": str(args.chunk),
         "targets": targets,
+        "tone_dsp_sample_rates_hz": {
+            "44k1_family": args.fs441,
+            "48k_family": args.fs48,
+        },
         "topology": topology,
         "weighted_rms_db": cost,
         "base_weight_rms_db": base_cost,
